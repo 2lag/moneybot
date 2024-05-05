@@ -16,15 +16,21 @@ enum ClientFrameStage_t {
 };
 
 struct GlowObject_t {
-	IClientEntity* m_pEntity;
+private:
+	int unk0001; // 0x0
+public:
+	IClientEntity* m_pEntity; // 0x4
 	fclr_t color;
 	char junk0[ 8 ];
 	float m_flBloomAmount;
 	char junk1[ 4 ];
 	bool m_bRenderWhenOccluded;
 	bool m_bRenderWhenUnoccluded;
-	bool m_bFullBloom;
-	char junk2[ 14 ];
+	bool m_fullBloom;
+	char unk[ 1 ];
+	int  m_fullBloomStencil;
+	int unk2;
+	int  m_splitscreenSlot;
 };
 
 struct GlowObjectManager_t {

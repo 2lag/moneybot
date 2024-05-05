@@ -279,7 +279,7 @@ void c_visuals::update_glow( ) {
     static auto manager_ptr = g_header.patterns.glow_manager + 0x3;
 #else
     static auto manager_ptr = pattern::first_code_match(
-        g_csgo.m_chl.dll( ), xors( "0F 11 05 00 00 00 00 83 C8 01" ), 0x3 );
+        g_csgo.m_chl.dll( ), xors( "0F 11 05 ? ? ? ? 83 C8 01" ), 0x3 );
 #endif
 
     auto glow_object_manager = *( GlowObjectManager_t** )( manager_ptr );

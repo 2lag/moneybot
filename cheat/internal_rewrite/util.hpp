@@ -77,7 +77,7 @@ __forceinline std::wstring ascii_to_unicode( const std::string& ascii ) {
 template < typename integer > 
 __forceinline auto to_hex_str( const integer& w, 
 	size_t hex_len = sizeof( integer ) << 1 ) {
-	constexpr char* hex_digits = xors( "0123456789abcdef" );
+	const char* hex_digits = "0123456789abcdef";
 	std::string rc( hex_len, 0 );
 
 	for( size_t i{ }, j{ ( hex_len - 1 ) * 4 } ; i < hex_len; ++i, j -= 4 )

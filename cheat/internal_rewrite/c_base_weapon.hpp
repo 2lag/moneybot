@@ -232,14 +232,14 @@ class c_base_weapon {
     }
 
     __forceinline weapon_info_t* get_wpn_info( ) {
-        return util::get_vfunc< 457, weapon_info_t* >( this );
+        return util::get_vfunc< 461, weapon_info_t* >( this );
     }
 
-    __forceinline void update_accuracy_penalty( ) { return util::get_vfunc< 480, void >( this ); }
+    __forceinline void update_accuracy_penalty( ) { return util::get_vfunc< 484, void >( this ); }
 
-    __forceinline float get_spread( ) { return util::get_vfunc< 449, float >( this ); }
+    __forceinline float get_spread( ) { return util::get_vfunc< 453, float >( this ); }
 
-    __forceinline float get_inaccuracy( ) { return util::get_vfunc< 479, float >( this ); }
+    __forceinline float get_inaccuracy( ) { return util::get_vfunc< 483, float >( this ); }
 
     __forceinline void set_glove_model( int model_index ) { return util::get_vfunc< 75, void >( this, model_index ); }
 

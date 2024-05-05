@@ -431,7 +431,10 @@ public:
 		if( !this )
 			return false;
 
-		ClientClass* client_class = ce( )->GetClientClass( );
+		uintptr_t net = *( uintptr_t* )( ( uintptr_t )this + 0x8 );
+		uintptr_t create_fn = *( uintptr_t* )( net + 0x8 );
+		ClientClass* client_class = *( ClientClass**)( create_fn + 0x1 );
+
 		return client_class && client_class->m_class_id == CCSPlayer;
 	}
 

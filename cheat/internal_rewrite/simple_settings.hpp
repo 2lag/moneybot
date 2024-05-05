@@ -99,7 +99,7 @@ template < size_t L >
 class SettingString : ISetting {
 public:
 	__forceinline SettingString( SettingHolder* holder_ptr, hash_t hash ) : 
-		m_name( name ), m_value( "" ) {
+		m_name( hash ), m_value( "" ) {
 		holder_ptr->register_( this );
 	};
 

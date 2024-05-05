@@ -22,11 +22,11 @@ namespace d3d
 
 
 	public:
-		c_sprite::c_sprite( ) {
+		c_sprite( ) {
 			sprites.push_back( this );
 		}
 
-		c_sprite::~c_sprite( ) {
+		~c_sprite( ) {
 			on_reset( );
 		}
 

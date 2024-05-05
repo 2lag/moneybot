@@ -18,11 +18,11 @@ public:
 	float& b( ) { return B; }
 	float& a( ) { return A; }
 
-	fclr_t& operator =( fclr_t& c ) {
-		R = c.r( );
-		G = c.g( );
-		B = c.b( );
-		A = c.a( );
+	fclr_t& operator =( const fclr_t& c ) {
+		R = c.R;
+		G = c.G;
+		B = c.B;
+		A = c.A;
 		return *this;
 	}
 
@@ -53,11 +53,11 @@ public:
 	uint8_t& b( ) { return B; }
 	uint8_t& a( ) { return A; }
 
-	clr_t& operator =( clr_t& c ) {
-		R = c.r( );
-		G = c.g( );
-		B = c.b( );
-		A = c.a( );
+	clr_t& operator =( const clr_t& c ) {
+		R = c.R;
+		G = c.G;
+		B = c.B;
+		A = c.A;
 		return *this;
 	}
 

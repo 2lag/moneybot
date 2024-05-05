@@ -62,7 +62,7 @@ public:
 						}
 					}
 
-					std::string str( str + start, end - start );
+					std::string str( str.c_str() + start, end - start );
 
 					char* end_ptr = ( char* )str.c_str( ) + end;
 					if constexpr( std::is_integral_v< t > ) {

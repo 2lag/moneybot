@@ -169,7 +169,7 @@ void console::execute_command( const char* cmd ) {
 			if( !setting_cast->is_integral( ) && !setting_cast->is_floating_point( ) ) {
 				auto value = std::strtol( second_param.c_str( ), 0, 16 );
 				printf( xors( "value: %08x\n" ), value );
-				var->set( value );
+				var->set( (int)value );
 			}
 
 			if( is_floating_point ) {

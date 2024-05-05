@@ -556,12 +556,10 @@ void c_base_player::handle_taser_animation( ) {
 }
 
 vec3_t c_base_player::get_eye_pos( ) {
-    vec3_t yes;
     // fuck references Lol
-    util::get_vfunc< void( __thiscall* )( void*, vec3_t& ) >( this, 284 )( this, yes );
-
-    // thanks senator!! !11
-    return yes;
+    vec3_t ret;
+    util::get_vfunc< void( __thiscall* )( void*, vec3_t*) >( this, 285 )( this, &ret );
+    return ret;
 }
 
 void c_base_player::calculate_duckamount( bool reset ) {

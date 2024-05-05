@@ -74,6 +74,11 @@ void c_drawings::draw_filled_circle( int x, int y, int r, const clr_t& col, int 
 	draw_polygon( res, v, col );
 }
 
+void c_drawings::get_text_size( HFont font, const wchar_t* buffer, int& x, int& y ) {
+  g_csgo.m_surface( )->GetTextSize( font, buffer, x, y ); 
+}
+
+
 void c_drawings::draw_line( const vec2_t& begin, const vec2_t& end, const clr_t& clr ) {
 	draw_line( ( int )begin.x, ( int )begin.y, ( int )end.x, ( int )end.y, clr );
 }

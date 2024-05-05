@@ -86,7 +86,7 @@ __declspec( safebuffers ) bool factory::create_interfaces( c_csgo* instance, hea
 	instance->m_keyvalues = ( IKeyValuesSystem* )kv_fn( );
 
 	uintptr_t* globals = **reinterpret_cast< uintptr_t*** >( 
-		instance->m_chl->get_old_function( 0 ) + 0x1b );
+		instance->m_chl->get_old_function( 0 ) + 0x1f );
 	instance->m_globals = reinterpret_cast< global_vars_t* >( globals );
 
 	uintptr_t* client_mode = **reinterpret_cast< uintptr_t*** >( 
@@ -228,9 +228,15 @@ con_fn parse_fn{ fnv( "parse_js" ),
 	"%S %S"
 };*/
 
+bool initialized = false;
 __declspec( safebuffers ) void factory::c_csgo::initialize( ) {
 	DELETE_START( 0 )
 
+  if( initialized )
+    return;
+
+  initialized = true;
+  
 	m_panic = false;
 
 	g_con->create( );

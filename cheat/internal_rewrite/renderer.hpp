@@ -67,6 +67,8 @@ private:
 	//dumb hacky fix for template functions
 	void draw_string( const wchar_t* msg, HFont font, int x, int y, const clr_t& color );
 
+  void get_text_size( HFont font, const wchar_t* buffer, int& x, int& y );
+  
 public:
 	void draw_line( const vec2_t& begin, const vec2_t& end, const clr_t& color );
 	void draw_line( int x, int y, int x1, int y2, const clr_t& color );
@@ -75,7 +77,7 @@ public:
 	void draw_polygon( int count, vertex_t* vertices, const clr_t& col );
 	void draw_circle( int x, int y, int r, const clr_t& col, int res = 48 );
 	void draw_filled_circle( int x, int y, int r, const clr_t& col, int res = 48 );
-
+  
 	template < FontAlign_t align = ALIGN_LEFT > //fuck ur sprintf nigga varargs nigga
 	void draw_string( HFont font, int x, int y, const clr_t& color, const wchar_t* msg, ... ) {
 		wchar_t* buffer = ( wchar_t* )_alloca( 2048 );
@@ -88,9 +90,8 @@ public:
 		vswprintf_s( buffer, 1024, msg, list );
 		__crt_va_end( list );
 
-		g_csgo.m_surface( )->GetTextSize(
-			font, buffer, wide, tall );
-
+    get_text_size( font, buffer, wide, tall );
+	  
 		switch( align ) {
 		case ALIGN_CENTER:
 			x -= wide / 2;

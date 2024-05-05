@@ -156,7 +156,7 @@ constexpr size_t strlen_ct( const char* const str ) {
 #define xors( s ) ( strenc::XorString< strenc::strlen_ct( s ), __COUNTER__ >( s, std::make_index_sequence< sizeof( s ) - 1>() ).decrypt() )
 #else
 #define xors_raw( s ) ( [ ]{ strenc::debug_ret ret{ s }; return ret; }( ) )
-#define xors( s ) ( s )
+#define xors( s ) s
 #endif
 
 END_NAMESPACE

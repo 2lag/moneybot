@@ -1,5 +1,0 @@
-#include "icons/legit.hpp"
-#include "icons/rage.hpp"
-#include "icons/visuals.hpp"
-#include "icons/misc.hpp"
-#include "icons/config.hpp"

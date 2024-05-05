@@ -108,8 +108,8 @@ __declspec( safebuffers ) bool hooks::commit( factory::c_csgo* instance ) {
 	auto update_clientside_anim = pattern::first_code_match< void* >( instance->m_chl.dll( ), xors( "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74 36" ) );
 	update_clientside_animation_o = d->create_hook( &hooks::update_clientside_animation, update_clientside_anim );
 	//
-	auto send_datagram = pattern::first_code_match< void* >( instance->m_engine.dll( ), xors( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 57 8B F9 89 7C 24 18" ) );
-	send_datagram_o = d->create_hook( &hooks::send_datagram, send_datagram );
+	//auto send_datagram = pattern::first_code_match< void* >( instance->m_engine.dll( ), xors( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 57 8B F9 89 7C 24 18" ) );
+	//send_datagram_o = d->create_hook( &hooks::send_datagram, send_datagram );
 
 	d->enable( );
 

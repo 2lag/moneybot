@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "csgo", "internal_rewrite\in
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmod", "gmod\gmod.vcxproj", "{82E7C50B-01E3-4D65-AECC-196E9494DFF4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tf2", "tf2\test_cso2.vcxproj", "{DD486C1B-C911-42B8-AB24-A9102A23DC02}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -62,26 +60,6 @@ Global
 		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Release|x64.Build.0 = Release|x64
 		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Release|x86.ActiveCfg = Release|Win32
 		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Release|x86.Build.0 = Release|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Debug|x64.ActiveCfg = Debug|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Debug|x64.Build.0 = Debug|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Debug|x86.ActiveCfg = Debug|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Debug|x86.Build.0 = Debug|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Online|x64.ActiveCfg = pHit|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Online|x64.Build.0 = pHit|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Online|x86.ActiveCfg = pHit|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Online|x86.Build.0 = pHit|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.optimize_test|x64.ActiveCfg = pHit|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.optimize_test|x64.Build.0 = pHit|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.optimize_test|x86.ActiveCfg = pHit|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.optimize_test|x86.Build.0 = pHit|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.pHit|x64.ActiveCfg = pHit|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.pHit|x64.Build.0 = pHit|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.pHit|x86.ActiveCfg = pHit|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.pHit|x86.Build.0 = pHit|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Release|x64.ActiveCfg = Release|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Release|x64.Build.0 = Release|x64
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Release|x86.ActiveCfg = Release|Win32
-		{DD486C1B-C911-42B8-AB24-A9102A23DC02}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
