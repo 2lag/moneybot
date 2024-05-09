@@ -56,6 +56,7 @@ void __cdecl hooks::last_shot_proxy_fn( const CRecvProxyData* proxy_data_const, 
 void __cdecl hooks::simtime_proxy_fn( const CRecvProxyData* proxy_data_const, void* entity, void* output ) {
 	auto old_fn = simtime_proxy.get_old_function( );
 
+	old_fn( proxy_data_const, entity, output );
 	auto ent = ( c_base_player* )( entity );
 	if( ent && ent->is_valid( ) && ent->has_valid_anim( ) && ( ent->m_iTeamNum( ) != g_ctx.m_local->m_iTeamNum( ) || g_settings.rage.friendlies( ) ) && ent != g_ctx.m_local ) {
 		if( !proxy_data_const->m_Value.m_Int ) {
@@ -63,7 +64,6 @@ void __cdecl hooks::simtime_proxy_fn( const CRecvProxyData* proxy_data_const, vo
 		}
 	}
 
-	old_fn( proxy_data_const, entity, output );
 }
 
 #define SEQUENCE_DEFAULT_DRAW						0

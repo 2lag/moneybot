@@ -272,7 +272,6 @@ public:
 	NETVAR( m_flNextAttack, "m_flNextAttack", "DT_BaseCombatCharacter", 0, float );
 	NETVAR( m_flLowerBodyYawTarget, "m_flLowerBodyYawTarget", "DT_CSPlayer", 0, float );
 	NETVAR( m_angEyeAngles, "m_angEyeAngles[0]", "DT_CSPlayer", 0, vec3_t );
-	NETVAR( m_AnimOverlay, "m_hLightingOrigin", "DT_BaseAnimating", 0x3c, CUtlVector< C_AnimationLayer > );
 	NETVAR( m_flSimulationTime, "m_flSimulationTime", "DT_BaseEntity", 0, float );
 	NETVAR( m_flCycle, "m_flCycle", "DT_BaseAnimating", 0, float );
 	NETVAR( m_nSequence, "m_nSequence", "DT_BaseAnimating", 0, int );
@@ -309,9 +308,11 @@ public:
 	NETVAR( m_flConstraintRadius, "m_flConstraintRadius", "DT_CSPlayer", 0, float );
 	NETVAR( m_flHealthShotBoostExpirationTime, "m_flHealthShotBoostExpirationTime", "DT_CSPlayer", 0, float );
 
-	OFFSET( m_CachedBoneData, 0x290C + sizeof( void* ), CUtlVector< matrix3x4 > );
+	OFFSET( m_CachedBoneData, 0x2914, CUtlVector< matrix3x4 > );
 	OFFSET( m_flSpawnTime, 0xA2C0, float );
 	OFFSET( m_IKContext, 0x265c, IKContext* );
+
+	OFFSET( m_AnimOverlay, 0x2990, CUtlVector< C_AnimationLayer > );
 public:
 	static uintptr_t get_player_resource( );
 	static uintptr_t get_game_rules( );

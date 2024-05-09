@@ -99,11 +99,11 @@ __declspec( safebuffers ) bool hooks::commit( factory::c_csgo* instance ) {
 	begin_lock_o = d->create_hook( &hooks::begin_lock, instance->m_mdl_cache->get_old_function< void* >( 33 ) );
 	end_lock_o = d->create_hook( &hooks::end_lock, instance->m_mdl_cache->get_old_function< void* >( 34 ) );
 	//
-	auto packet_start = pattern::first_code_match< void* >( instance->m_engine.dll( ), xors( "55 8B EC 8B 45 08 89 81 ? ? ? ? 8B 45 0C 89 81 ? ? ? ? 5D C2 08 00 ? ? ? ? ? ? ? 56" ) );
-	packet_start_o = d->create_hook( &hooks::packet_start, packet_start );
+	//auto packet_start = pattern::first_code_match< void* >( instance->m_engine.dll( ), xors( "55 8B EC 8B 45 08 89 81 ? ? ? ? 8B 45 0C 89 81 ? ? ? ? 5D C2 08 00 ? ? ? ? ? ? ? 56" ) );
+	//packet_start_o = d->create_hook( &hooks::packet_start, packet_start );
 	//
-	auto process_packet = pattern::first_code_match< void * >(instance->m_engine.dll(), xors("55 8B EC 83 E4 C0 81 EC ? ? ? ? 53 56 57 8B 7D 08 8B D9"));
-	process_packet_o = d->create_hook(&hooks::process_packet, process_packet);
+	//auto process_packet = pattern::first_code_match< void * >(instance->m_engine.dll(), xors("55 8B EC 83 E4 C0 81 EC ? ? ? ? 53 56 57 8B 7D 08 8B D9"));
+	//process_packet_o = d->create_hook(&hooks::process_packet, process_packet);
 	//
 	auto update_clientside_anim = pattern::first_code_match< void* >( instance->m_chl.dll( ), xors( "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74 36" ) );
 	update_clientside_animation_o = d->create_hook( &hooks::update_clientside_animation, update_clientside_anim );

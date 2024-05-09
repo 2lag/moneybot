@@ -66,7 +66,7 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 
 		// u forgot to put this back in the right place after u removed
 		// my epic engine prediction that set seed to the player ptr 
-		g_cheat.m_prediction.run_command(ucmd);
+		//g_cheat.m_prediction.run_command(ucmd);
 		g_cheat.m_movement( ucmd );
 		
 		//SUPER SECRET EXPLOIT DO NOT LEAK
@@ -82,7 +82,7 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 
 		g_cheat.m_visuals.update_hit_flags( );
 		g_cheat.m_extra.fake_duck( ucmd );
-		g_cheat.m_ragebot( ucmd );
+		//g_cheat.m_ragebot( ucmd );
 
 		g_cheat.m_extra.no_recoil( ucmd );
 
@@ -102,7 +102,7 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 		g_ctx.on_cmove_end( ucmd );
 
 		auto cl = g_csgo.m_client_state;
-		if( g_cheat.m_lagmgr.get_state( ) ) {
+		/*if( g_cheat.m_lagmgr.get_state( ) ) {
 			g_ctx.m_cmd_numbers.push_back( ucmd->m_cmd_nr );
 		}
 		else {
@@ -114,24 +114,24 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 			int in_seq = cl->m_netchannel->m_nInSequenceNr;
 			int reliable = cl->m_netchannel->m_nInReliableState;
 			//
-			g_cheat.m_extra.add_latency( cl->m_netchannel );
-			send_datagram_o( cl->m_netchannel, 0, 0 );
+			//g_cheat.m_extra.add_latency( cl->m_netchannel );
+			//send_datagram_o( cl->m_netchannel, 0, 0 );
 			//
 			cl->m_netchannel->m_nInSequenceNr = in_seq;
 			//
 			cl->m_netchannel->m_nInReliableState = reliable;
 			cl->m_netchannel->m_nOutSequenceNr--;
 			cl->m_netchannel->m_nChokedPackets = choked;
-		}
+		}*/
 
-		g_cheat.m_ragebot.m_antiaim->on_runcommand( );
+		//g_cheat.m_ragebot.m_antiaim->on_runcommand( );
 	}
 	else {
 		g_ctx.reset_shot_queue( );
 	}
 
 	if( is_switching_weapon ) {
-		ucmd->m_buttons &= ~IN_ATTACK;
+		//ucmd->m_buttons &= ~IN_ATTACK;
 	}
 
 	g_js->run_on_cmove( );

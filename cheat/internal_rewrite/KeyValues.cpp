@@ -25,7 +25,7 @@ const char* IKeyValuesSystem::GetStringForSymbol( int symbol ) {
 }
 
 KeyValues::KeyValues( const char* setName ) {
-	static void( __thiscall* keyvalues_constructor )( KeyValues*, const char* ) = 0;
+	static void( __thiscall* keyvalues_constructor )( KeyValues*, const char*, int a3, int a4 ) = 0;
 
 	if( !keyvalues_constructor ) {
 		auto address = pattern::first_code_match( g_csgo.m_chl.dll( ),
@@ -35,7 +35,7 @@ KeyValues::KeyValues( const char* setName ) {
 		keyvalues_constructor = decltype( keyvalues_constructor )( address + *( uintptr_t* )( address ) + 4 );
 	}
 
-	keyvalues_constructor( this, setName );
+	keyvalues_constructor( this, setName, 0, 0 );
 }
 
 KeyValues::~KeyValues( ) {

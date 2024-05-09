@@ -84,7 +84,7 @@ namespace features
 	void c_material::init( const char* name, const char* buf ) {
 		m_keyvalues = new KeyValues( name );
 		m_keyvalues->LoadFromBuffer( name, buf );
-
+	  
 		// CreateMaterial already increments ref counter
 		m_mat = g_csgo.m_mat_system( )->CreateMaterial( name, m_keyvalues );
 	}
