@@ -123,20 +123,32 @@ using CCLCMsg_Move_t = CNetMessagePB<CCLCMsg_Move_>;
 
 class CClientState {
 public:
-	uint8_t pad_0000[ 156 ]; //0x0000
+	uint8_t pad_0000[ 0x9c ]; //0x0000
 	class INetChannel* m_netchannel; //0x009C
-	uint8_t pad_00A0[ 104 ]; //0x00A0
+	uint8_t pad_00A0[ 0x65 ]; //0x00A0
 	uint32_t m_signon_state; //0x0108
-	uint8_t pad_010C[ 92 ]; //0x010C
-	uint32_t cur_clock_offset; //0x0168
+	uint8_t pad_010C[ 4 ]; //0x010C
+  double next_cmd_time; //0x0110
+  uint8_t pad[88];
 	uint32_t m_server_tick; //0x016C
 	uint32_t m_client_tick; //0x0170
-	int32_t m_delta_tick; //0x0174
+  int32_t m_delta_tick; //0x0174
 	bool m_paused; //0x0178
-	uint8_t pad_0179[ 275 ]; //0x0179
-	char level_name[ 260 ]; //0x028C
-	uint8_t pad_0390[ 18836 ]; //0x0390
-	int m_lastoutgoingcommand; //0x4CA8
+  int view_entity;
+  int player_slot;
+  int splitscreen_slot;
+  char level_name[ 260 ]; //0x028C
+  char level_name_short[80];
+  char last_level_short[80];
+  uint8_t pad_002[8];
+  int max_clients;
+  int players_to_connect;
+  uint8_t pad_idk[0x498C];
+  float last_server_tick;
+  bool in_simulation;
+  uint8_t pad_unk3[0x8];
+  float frame_time;
+  int m_lastoutgoingcommand; //0x4CA8
 	int m_chokedcommands; //0x4CAC
 	int m_last_acknowledged_cmd; //0x4CB0
 	int m_command_ack; //0x4CB4

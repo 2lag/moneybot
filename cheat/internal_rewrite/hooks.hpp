@@ -19,8 +19,10 @@ namespace hooks
 	bool __fastcall create_move( void*, void*, float, user_cmd_t* );
 	extern decltype( &create_move ) create_move_o;
 
-	//void __fastcall hl_create_move( void*, void*, int, float, bool );
-	void __fastcall frame_stage_notify( void*, void*, ClientFrameStage_t );
+	void __fastcall hl_create_move( void*, void*, int, float, bool, byte* sendpacket );
+	void __fastcall hl_create_move_gate( void*, void*, int, float, bool );
+  extern decltype( &hl_create_move_gate ) hl_create_move_o;
+  void __fastcall frame_stage_notify( void*, void*, ClientFrameStage_t );
 	extern decltype( &frame_stage_notify ) fsn_o;
 
 	void __fastcall suppress_lists( void*, void*, int, bool );

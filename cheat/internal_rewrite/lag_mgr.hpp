@@ -7,13 +7,18 @@ namespace features
 {
 	class c_lagmgr {
 	public:
-		void operator()( user_cmd_t* cmd, byte* sendpacket ) {
-			if( !sendpacket ) return;
+    void operator()( byte* sendpacket ) {
+      m_sendpacket = sendpacket;
+    }
+	  
+		void operator()( user_cmd_t* cmd ) {
 			if( !cmd ) return;
 
 			m_cmd = cmd;
-			m_sendpacket = sendpacket;
 
+      if( !m_sendpacket )
+        return;
+		  
 			if( g_settings.rage.anti_aim( ) ) {
 				on_antiaim( );
 			}

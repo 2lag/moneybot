@@ -5,7 +5,9 @@ void __fastcall hooks::packet_start( void* ecx, void* edx, int in_seq, int out_a
 	if( !g_ctx.run_frame( ) || !g_ctx.m_local->is_valid( ) ) {
 		g_ctx.m_cmd_numbers.clear( );
 		*( int* )( uintptr_t( ecx ) + 0x114 ) = in_seq;
-		*( int* )( uintptr_t( ecx ) + 0x4d2c ) = out_ack;
+
+	  auto cl = (CClientState*)(ecx);
+	  cl->m_last_acknowledged_cmd = out_ack;
 	}
 	
 	// okay now this is epic
@@ -16,7 +18,9 @@ void __fastcall hooks::packet_start( void* ecx, void* edx, int in_seq, int out_a
 			auto cl = ( uintptr_t )( ecx );
 	
 			*( int* )( cl + 0x114 ) = in_seq;
-			*( int* )( cl + 0x4d2c ) = out_ack;
+		  auto cll = (CClientState*)(ecx);
+
+		  cll->m_last_acknowledged_cmd = out_ack;
 	
 			g_ctx.m_cmd_numbers.erase( cmd_number );
 			return;

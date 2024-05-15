@@ -9,6 +9,7 @@ namespace hooks {
 	decltype( &create_move ) create_move_o;
 	decltype( &frame_stage_notify ) fsn_o;
 	decltype( &suppress_lists ) suppress_lists_o;
+  decltype( &hl_create_move_gate ) hl_create_move_o;
 	decltype( &draw_small_entities ) draw_small_entities_o;
 	decltype( &begin_lock ) begin_lock_o;
 	decltype( &end_lock ) end_lock_o;
@@ -74,8 +75,11 @@ __declspec( safebuffers ) bool hooks::commit( factory::c_csgo* instance ) {
 	instance->m_csm_shadows->hook( 13, &hooks::cl_csm_shadows_get_int );
 
 	paint_traverse_o = d->create_hook( &hooks::paint_traverse, instance->m_panel->get_old_function< void* >( 41 ) );
-	create_move_o = d->create_hook( &hooks::create_move, instance->m_clientmode->get_old_function< void* >( 24 ) );
-	override_mouse_input_o = d->create_hook( &hooks::override_mouse_input, instance->m_clientmode->get_old_function< void* >( 23 ) );
+  
+  create_move_o = d->create_hook( &hooks::create_move, instance->m_clientmode->get_old_function< void* >( 24 ) );
+  hl_create_move_o = d->create_hook( &hooks::hl_create_move_gate, instance->m_chl->get_old_function< void* >( 22 ) );
+
+  override_mouse_input_o = d->create_hook( &hooks::override_mouse_input, instance->m_clientmode->get_old_function< void* >( 23 ) );
 	get_viewmodel_fov_o = d->create_hook( &hooks::get_viewmodel_fov, instance->m_clientmode->get_old_function< void* >( 35 ) );
 	do_post_screen_space_effects_o = d->create_hook( &hooks::do_post_screen_space_effects, instance->m_clientmode->get_old_function< void* >( 44 ) );
 	override_view_o = d->create_hook( &hooks::override_view, instance->m_clientmode->get_old_function< void* >( 18 ) );
@@ -108,8 +112,8 @@ __declspec( safebuffers ) bool hooks::commit( factory::c_csgo* instance ) {
 	auto update_clientside_anim = pattern::first_code_match< void* >( instance->m_chl.dll( ), xors( "55 8B EC 51 56 8B F1 80 BE ? ? ? ? ? 74 36" ) );
 	update_clientside_animation_o = d->create_hook( &hooks::update_clientside_animation, update_clientside_anim );
 	//
-	//auto send_datagram = pattern::first_code_match< void* >( instance->m_engine.dll( ), xors( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 57 8B F9 89 7C 24 18" ) );
-	//send_datagram_o = d->create_hook( &hooks::send_datagram, send_datagram );
+	auto send_datagram = pattern::first_code_match< void* >( instance->m_engine.dll( ), xors( "55 8B EC 83 E4 F0 B8 ? ? ? ? E8 ? ? ? ? 56 57 8B F9 89 7C 24 14" ) );
+	send_datagram_o = d->create_hook( &hooks::send_datagram, send_datagram );
 
 	d->enable( );
 

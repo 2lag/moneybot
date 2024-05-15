@@ -11,8 +11,8 @@
 
 #include "js_mgr.h"
 
-/*
-void __declspec( naked ) __stdcall hooks::hl_create_move_gate( int sequence_number, float input_sample_time, bool active ) {
+
+void __declspec( naked ) __fastcall hooks::hl_create_move_gate( void* ecx, void* edx, int sequence_number, float input_sample_time, bool active ) {
 	__asm {
 		push	ebp
 		mov		ebp, esp
@@ -27,25 +27,25 @@ void __declspec( naked ) __stdcall hooks::hl_create_move_gate( int sequence_numb
 		ret		0xc
 	}
 }
-*/
 
-bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_frametime, user_cmd_t* ucmd ) {
-	stack_t stack( get_baseptr( ) );
-	byte* send_packet = stack.next( ).local< byte* >( 0x1c );
+void __fastcall hooks::hl_create_move( void* ecx, void* edx, int a1, float a2, bool a3, byte* send_packet ) {
+  hl_create_move_o(ecx, edx, a1, a2, a3);
 
-	bool ret = create_move_o( ecx_, edx_, input_sample_frametime, ucmd );
+  //g_cheat.m_lagmgr( sendpacket );
+  user_cmd_t* ucmd = g_csgo.m_input( )->GetUserCmd( a1 );
+  verified_cmd_t* vcmd = g_csgo.m_input( )->GetVerifiedCmd( a1 );
+  if( !ucmd || !vcmd )
+    return;
 
-	if( !ucmd->m_tick_count || !ucmd->m_cmd_nr )
-		return ret;
-
-	// when switching to non automatic weapons, it will sometimes not shoot when aimbotting so we reset attack flag
-	bool is_switching_weapon = false;
-	if( g_csgo.m_input( )->m_hSelectedWeapon != -1 ) {
-		is_switching_weapon = true;
-	}
-
-	if( ret )
-		g_csgo.m_engine( )->SetViewAngles( ucmd->m_viewangles );
+  if( !ucmd->m_cmd_nr )
+    return;
+  
+  
+  // when switching to non automatic weapons, it will sometimes not shoot when aimbotting so we reset attack flag
+  bool is_switching_weapon = false;
+  if( g_csgo.m_input( )->m_hSelectedWeapon != -1 ) {
+    is_switching_weapon = true;
+  }
 
 	// FIX ME NAVE
 	// ok love
@@ -66,7 +66,7 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 
 		// u forgot to put this back in the right place after u removed
 		// my epic engine prediction that set seed to the player ptr 
-		//g_cheat.m_prediction.run_command(ucmd);
+		g_cheat.m_prediction.run_command(ucmd);
 		g_cheat.m_movement( ucmd );
 		
 		//SUPER SECRET EXPLOIT DO NOT LEAK
@@ -78,7 +78,8 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 		g_cheat.m_legitbot.m_lagcomp( ucmd );
 		g_cheat.m_legitbot.triggerbot( ucmd );
 
-		g_cheat.m_lagmgr( ucmd, send_packet );
+	  g_cheat.m_lagmgr( send_packet );
+		g_cheat.m_lagmgr( ucmd );
 
 		g_cheat.m_visuals.update_hit_flags( );
 		g_cheat.m_extra.fake_duck( ucmd );
@@ -102,7 +103,7 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 		g_ctx.on_cmove_end( ucmd );
 
 		auto cl = g_csgo.m_client_state;
-		/*if( g_cheat.m_lagmgr.get_state( ) ) {
+		if( g_cheat.m_lagmgr.get_state( ) ) {
 			g_ctx.m_cmd_numbers.push_back( ucmd->m_cmd_nr );
 		}
 		else {
@@ -114,24 +115,24 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 			int in_seq = cl->m_netchannel->m_nInSequenceNr;
 			int reliable = cl->m_netchannel->m_nInReliableState;
 			//
-			//g_cheat.m_extra.add_latency( cl->m_netchannel );
-			//send_datagram_o( cl->m_netchannel, 0, 0 );
+			g_cheat.m_extra.add_latency( cl->m_netchannel );
+			send_datagram_o( cl->m_netchannel, 0, 0 );
 			//
 			cl->m_netchannel->m_nInSequenceNr = in_seq;
 			//
 			cl->m_netchannel->m_nInReliableState = reliable;
 			cl->m_netchannel->m_nOutSequenceNr--;
 			cl->m_netchannel->m_nChokedPackets = choked;
-		}*/
+		}
 
-		//g_cheat.m_ragebot.m_antiaim->on_runcommand( );
+		g_cheat.m_ragebot.m_antiaim->on_runcommand( );
 	}
 	else {
 		g_ctx.reset_shot_queue( );
 	}
 
 	if( is_switching_weapon ) {
-		//ucmd->m_buttons &= ~IN_ATTACK;
+		ucmd->m_buttons &= ~IN_ATTACK;
 	}
 
 	g_js->run_on_cmove( );
@@ -141,6 +142,25 @@ bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_f
 		//g_settings.menu.anti_untrusted = true;
 
 	ucmd->clamp( g_settings.menu.anti_untrusted );
+  ucmd->headangles = ucmd->m_viewangles;
+  ucmd->m_oldbuttons = ucmd->m_buttons;
+  
+  vcmd->m_cmd = *ucmd;
+  vcmd->m_crc = ucmd->get_check_sum();
+}
+
+
+bool __fastcall hooks::create_move( void* ecx_, void* edx_, float input_sample_frametime, user_cmd_t* ucmd ) {
+	stack_t stack( get_baseptr( ) );
+	byte* send_packet = stack.next( ).local< byte* >( 0x1c );
+
+	bool ret = create_move_o( ecx_, edx_, input_sample_frametime, ucmd );
+
+	if( !ucmd->m_tick_count || !ucmd->m_cmd_nr )
+		return ret;
+
+	if( ret )
+		g_csgo.m_engine( )->SetViewAngles( ucmd->m_viewangles );
 
 	return false;
 }

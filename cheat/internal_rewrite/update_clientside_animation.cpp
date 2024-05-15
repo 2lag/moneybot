@@ -4,6 +4,9 @@
 #include "mem.hpp"
 #include "util.hpp"
 
+// holy shit
+// literally none of this works.
+
 void __fastcall hooks::update_clientside_animation( void* ecx_, void* edx_ ) {
 	static bool first_update = true;
 	auto ent = ( c_base_player* )( ecx_ );

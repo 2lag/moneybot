@@ -576,9 +576,9 @@ void c_prediction::run_command( user_cmd_t *ucmd ) {
 	g_csgo.m_globals->m_curtime = g_csgo.m_globals->m_interval_per_tick * old_tickbase;
 	g_csgo.m_globals->m_frametime = g_csgo.m_globals->m_interval_per_tick;
 
-	//random seed is already being calculated and set in createmove
-	**( uintptr_t** )( run_command_address + 0x3E ) = ucmd->m_random_seed; //prediction seed
-	**( uintptr_t** )( run_command_address + 0x54 ) = uintptr_t( g_ctx.m_local ); //prediction player
+  // only makes a small difference in nospread. i dont care.
+  //**( uintptr_t** )( run_command_address + 0x3E ) = ucmd->m_random_seed; //prediction seed
+	//**( uintptr_t** )( run_command_address + 0x54 ) = uintptr_t( g_ctx.m_local ); //prediction player
 
 																				  //start prediction
 	g_csgo.m_move_helper( )->SetHost( local_ent );
@@ -593,8 +593,8 @@ void c_prediction::run_command( user_cmd_t *ucmd ) {
 	g_csgo.m_game_movement( )->FinishTrackPredictionErrors( local_ent );
 	g_csgo.m_move_helper( )->SetHost( nullptr );
 
-	**( uintptr_t** )( run_command_address + 0x3E ) = 0xffffffff;
-	**( uintptr_t*** )( run_command_address + 0x54 ) = nullptr;
+	//**( uintptr_t** )( run_command_address + 0x3E ) = 0xffffffff;
+	//**( uintptr_t*** )( run_command_address + 0x54 ) = nullptr;
 
 	//good to have, can be used for edge jump and such
 	m_predicted_flags = g_ctx.m_local->m_fFlags( );

@@ -76,16 +76,19 @@ namespace features
 			max_ticks *= last_rand;
 
 		static bool changed = false;
+		/*
+		valve anti cheat does not approve
 		static auto cl_sendmove = pattern::first_code_match( g_csgo.m_engine.dll( ), xors( "55 8B EC A1 ? ? ? ? 81 EC ? ? ? ? B9 ? ? ? ? 53 8B 98" ), 0 );
 		
 		if( !changed ) {
 			ulong_t old;
 			VirtualProtect( ( void* )( cl_sendmove + 0xbd ), 1, PAGE_EXECUTE_READWRITE, &old );
-			*( uint8_t* )( cl_sendmove + 0xbd ) = 50;
+ 			*( uint8_t* )( cl_sendmove + 0xbd ) = 50;
 			VirtualProtect( ( void* )( cl_sendmove + 0xbd ), 1, old, nullptr );
 		}
 
 		changed = true;
+		*/
 
 		max_ticks = math::min( max_ticks, 16 );
 

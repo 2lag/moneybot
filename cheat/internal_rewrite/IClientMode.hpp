@@ -53,8 +53,8 @@ public:
 	short	m_mousedy; // 0x46 mouse accum in y from create move
 	bool	m_predicted; // 0x48 Client only, tracks whether we've predicted this command at least once
 	vec3_t  headangles; // 0x49
-	vec3_t	headoffset; // 0x55
-
+  int   m_oldbuttons;
+  
 	__forceinline user_cmd_t clamp( bool angles = true ) {
 		if( angles )
 			m_viewangles.clamp( );
@@ -90,7 +90,7 @@ public:
 	}
 
 private:
-	
+	int pad[2];
 	//char pad_0x4C[ 0x18 ]; // 0x4C Current sizeof( usercmd ) =  100  = 0x64
 };
 
