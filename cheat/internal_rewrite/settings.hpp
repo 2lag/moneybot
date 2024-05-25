@@ -404,6 +404,8 @@ namespace data
 			con_var< int > fastwalk_key{ &holder_, fnv( "fastwalk_key" ), 0 };
 			con_var< bool > edge_jump{ &holder_, fnv( "misc_edgejump" ), false };
 			con_var< int > edge_jump_key{ &holder_, fnv( "misc_edge_jump_key" ), false };
+      con_var< bool > edge_bug{ &holder_, fnv( "misc_edge_bug_key" ), false };
+			con_var< int > edge_bug_key{ &holder_, fnv( "misc_edge_bug_key" ), false };
 			con_var< bool > show_jump_stats{ &holder_, fnv( "misc_show_jump_stats" ), 0 };
 			con_var< int > viewmodel_fov{ &holder_, fnv( "misc_viewmodel_fov" ), 0 };
 			con_var< int > fov_changer{ &holder_, fnv( "fov_changer" ), 90 };

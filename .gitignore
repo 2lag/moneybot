@@ -41,4 +41,6 @@ Release/
 
 *.json
 
-*.sqlite
+day.h
+/.vs/
+/cheat/.vs/

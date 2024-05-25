@@ -21,6 +21,8 @@
 
 #include "js_mgr.h"
 
+#include "day.h"
+
 namespace ui
 {
 	extern std::shared_ptr< ui::c_menu > menu;
@@ -40,11 +42,15 @@ namespace ui
 #ifndef _DEBUG
 			date_str = std::string( g_header.username ) + ( g_header.days_left == 9999 ? " | lifetime" : ( " | days left: " + std::to_string( g_header.days_left ) ) );
 
-			menu = std::make_shared< ui::c_menu >( 10, 10, 580, 470, xors( "tencent.dll" ),
+			menu = std::make_shared< ui::c_menu >( 10, 10, 580, 470, xors( "moneybot.cc" ),
 				//don't ask
 				date_str.c_str( ) );
 #else
-			menu = std::make_shared< ui::c_menu >( 10, 10, 580, 470, xors( "tencenthook.dll" ),
+#ifdef day
+      date_str = std::string( "day | lifetime" );
+#endif
+
+			menu = std::make_shared< ui::c_menu >( 10, 10, 580, 470, xors( "moneybot.cc" ),
 				date_str.c_str( ) );
 #endif
 
@@ -196,7 +202,6 @@ namespace ui
 
 				tab_legit->add_item( subtab_sheet );
 			}
-
 
 			auto tab_rage = std::make_shared< ui::c_tab_sheet >( xors( "rage" ), &icons::sprite_rage ); {
 				auto subtab_sheet = std::make_shared< ui::c_subtab_manager >( );
@@ -515,7 +520,6 @@ namespace ui
 				tab_rage->add_item( subtab_sheet );
 			}
 
-
 			auto tab_visuals = std::make_shared< ui::c_tab_sheet >( xors( "visuals" ), &icons::sprite_visuals ); {
 				auto subtab_sheet = std::make_shared< ui::c_subtab_manager >( );
 
@@ -714,7 +718,6 @@ namespace ui
 				tab_visuals->add_item( subtab_sheet );
 			}
 
-
 			auto tab_misc = std::make_shared< ui::c_tab_sheet >( xors( "miscellaneous" ), &icons::sprite_misc ); {
 				auto subtab_sheet = std::make_shared< ui::c_subtab_manager >( );
 
@@ -735,6 +738,9 @@ namespace ui
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge jump" ), &g_settings.misc.edge_jump( ) ) )->add_item(
 							std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.edge_jump_key( ), xors( "edge_jump_key" ) )
 						);
+            movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge bug" ), &g_settings.misc.edge_bug( ) ) )->add_item(
+              std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.edge_bug_key( ), xors( "edge_bug_key" ) )
+            );
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "show jump stats" ), &g_settings.misc.show_jump_stats ) );
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "fake duck" ), &g_settings.misc.fake_duck( ) ) )->add_item(
 							std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.fake_duck_key( ), xors( "fake_duck_key" ) )

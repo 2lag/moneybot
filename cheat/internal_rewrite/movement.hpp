@@ -1,5 +1,6 @@
 #pragma once
 #include "util.hpp"
+#include <vector>
 
 //forward declarations
 class user_cmd_t;
@@ -13,6 +14,7 @@ class c_movement {
 	void bhop( );
 	void auto_strafer( );
 
+  void edge_bug();
 	void edge_jump( );
 	void jump_stats( );
 
@@ -22,10 +24,14 @@ class c_movement {
 	void circle_strafe( );
     void fast_walk( );
     void air_duck( );
-
+    
+  std::vector<std::pair<vec3_t, vec3_t>> bug_path;
 public:
+  std::vector<std::pair<vec3_t, vec3_t>> hit_path;
+
 	void operator()( user_cmd_t* ucmd ) {
 		m_ucmd = ucmd;
+    edge_bug();
 		auto_strafer( );
 		circle_strafe( );
 		fast_walk( );

@@ -594,5 +594,8 @@
     <ClInclude Include="IEffects.h">
       <Filter>sdk</Filter>
     </ClInclude>
+    <ClInclude Include="day.h">
+      <Filter>ui</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

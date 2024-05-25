@@ -52,6 +52,7 @@ namespace features
 		void spectator_list( );
 		void grenade_prediction( );
 		void draw_firegrenade( );
+    void draw_edge_bug( );
 
 		struct tracer_t {
 			float m_time;

@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.106
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.34601.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "csgo", "internal_rewrite\internal_rewrite.vcxproj", "{140DEC51-B0E7-4289-BB6F-79686422318E}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gmod", "gmod\gmod.vcxproj", "{82E7C50B-01E3-4D65-AECC-196E9494DFF4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,25 +39,6 @@ Global
 		{140DEC51-B0E7-4289-BB6F-79686422318E}.Release|x64.Build.0 = Release|x64
 		{140DEC51-B0E7-4289-BB6F-79686422318E}.Release|x86.ActiveCfg = Release|Win32
 		{140DEC51-B0E7-4289-BB6F-79686422318E}.Release|x86.Build.0 = Release|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Debug|x64.ActiveCfg = Debug|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Debug|x64.Build.0 = Debug|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Debug|x86.ActiveCfg = Debug|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Debug|x86.Build.0 = Debug|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Online|x64.ActiveCfg = pHit|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Online|x64.Build.0 = pHit|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Online|x86.ActiveCfg = optimize_test|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Online|x86.Build.0 = optimize_test|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.optimize_test|x64.ActiveCfg = optimize_test|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.optimize_test|x86.ActiveCfg = optimize_test|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.optimize_test|x86.Build.0 = optimize_test|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.pHit|x64.ActiveCfg = pHit|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.pHit|x64.Build.0 = pHit|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.pHit|x86.ActiveCfg = pHit|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.pHit|x86.Build.0 = pHit|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Release|x64.ActiveCfg = Release|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Release|x64.Build.0 = Release|x64
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Release|x86.ActiveCfg = Release|Win32
-		{82E7C50B-01E3-4D65-AECC-196E9494DFF4}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

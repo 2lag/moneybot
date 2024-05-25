@@ -103,9 +103,9 @@ namespace features
 		grenade_prediction( );
 		draw_spread( );
 		spectator_list( );
+    draw_edge_bug( );
 
 		const int offset = 21;
-
 
 		if( g_ctx.m_local->is_valid( ) ) {
 			//isvalveds
@@ -244,6 +244,22 @@ namespace features
 
 		draw_autowall( );
 	}
+  
+  void c_visuals::draw_edge_bug( ) {
+    #ifdef _DEBUG
+    if ( !g_settings.misc.edge_bug )
+      return;
+
+    for ( const auto& segment : g_cheat.m_movement.hit_path ) {
+      vec2_t start_w2s = util::screen_transform( segment.first );
+      vec2_t end_w2s = util::screen_transform( segment.second );
+
+      draw_line( start_w2s, end_w2s, clr_t( 128, 0, 0 ) );
+
+      draw_filled_rect( end_w2s.x - 3, end_w2s.y - 3, 6, 6, g_settings.menu.menu_color );
+    }
+    #endif
+  }
 
 	void c_visuals::spectator_list( ) {
 		if( !g_settings.visuals.spec_list )
