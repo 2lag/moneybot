@@ -511,7 +511,6 @@
     <ClInclude Include="c_base_weapon.hpp" />
     <ClInclude Include="d3d.hpp" />
     <ClInclude Include="d3d_sprite.hpp" />
-    <ClInclude Include="day.h" />
     <ClInclude Include="detours.h" />
     <ClInclude Include="extra.hpp" />
     <ClInclude Include="factory.hpp" />

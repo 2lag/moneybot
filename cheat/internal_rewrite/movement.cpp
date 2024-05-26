@@ -130,7 +130,6 @@ void c_movement::edge_jump( ) {
 
 std::vector<float> edge_dist;
 bool should_bug = false;
-float old_vel_z = 0.f;
 
 bool edge_bug_detect( const vec3_t& old_vel, const vec3_t& pred_vel, const vec3_t& post_vel ) {
   static cvar_t* sv_gravity = g_csgo.m_cvar( )->FindVar( xors( "sv_gravity" ) );
@@ -149,60 +148,105 @@ bool edge_bug_detect( const vec3_t& old_vel, const vec3_t& pred_vel, const vec3_
   return false;
 }
 
-// if this func succeeds aka the traces hit then FL_ONGROUND will be set on that tick
-void trace_player_collision( const vec3_t& start, const vec3_t& end,
-                             const vec3_t& min_src, const vec3_t& max_src, CGameTrace& pm ) {
-  Ray_t ray;
-  vec3_t mins, maxs;
-  vec3_t endpos = pm.endpos;
-  float fraction = pm.fraction;
-  unsigned int mask = MASK_PLAYERSOLID;
+void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
+  vec3_t velocity = g_ctx.m_local->m_vecVelocity( );
+  float speed = velocity.length2d( );
 
-  mins = min_src;
-  maxs = { std::min( 0.f, max_src.x ), std::min( 0.f, max_src.y ), max_src.z };
-  
-  auto check_ray_quads = [ & ]( vec3_t mins, vec3_t maxs ) {
-    ray.Init( start, end, mins, maxs );
-    g_csgo.m_trace( )->TraceRay( ray, mask, 0, &pm );
-    
-    if ( pm.DidHit( ) && pm.plane.normal.z >= 0.7f )
-      return true;
-    else
-      return false;
-  };
+  if ( ( speed > 1.0f || g_settings.misc.air_duck( ) ) && !( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND ) && cmd && cmd->m_buttons & IN_JUMP ) {
+    float ideal_rot = std::min( RAD2DEG( asinf( 30.f / std::max( speed, FLT_EPSILON ) ) ) * 0.5f, 45.f );
 
-  if ( check_ray_quads( mins, maxs ) ) return;
+    if ( should_bug ) {
+      cmd->m_forwardmove = 0.f;
+      cmd->m_sidemove = 0.f;
+      return;
+    }
 
-  mins = { std::max( 0.f, min_src.x ), std::max( 0.f, min_src.y ), min_src.z };
-  maxs = max_src;
-  if ( check_ray_quads( mins, maxs ) ) return;
+    if ( !cmd->m_forwardmove && !cmd->m_sidemove ) { 
+      if ( !cmd->m_mousedx ) {
+        float sign = cmd->m_cmd_nr % 2 ? 1.f : -1.f;
+        cmd->m_forwardmove = 450.f;
+        cmd->m_sidemove = 0.f;
+        rotate_movement( cmd,
+          ( ideal_rot - 90.f ) * sign
+        );
+      } else
+        cmd->m_sidemove = cmd->m_mousedx < 0.f ? -450.f : 450.f;
+    } else if ( !cmd->m_mousedx ) {
+      float move_yaw = math::vector_angles( vec3_t( ),
+        vec3_t( cmd->m_forwardmove, cmd->m_sidemove,0.f )
+      ).y;
+      float vel_yaw = math::vector_angles( vec3_t( ), velocity ).y;
+      float vel_delta = std::remainderf( g_csgo.m_engine( )->GetViewAngles( ).y - vel_yaw, 360.f );
+      float move_delta = std::remainderf( move_yaw - vel_delta, 360.f );
+      float ideal_yaw = math::approach_angle( move_yaw, vel_delta, ideal_rot );
+      float delta_yaw = std::remainderf( move_yaw - ideal_yaw, 360.f );
 
-  mins = { min_src.x, std::max( 0.f, min_src.y ), min_src.z };
-  maxs = { std::min( 0.f, max_src.x ), max_src.y, max_src.z };
-  if ( check_ray_quads( mins, maxs ) ) return;
-  
-  mins = { std::max( 0.f, min_src.x ), min_src.y, min_src.z };
-  maxs = { max_src.x, std::min( 0.f, max_src.y ), max_src.z };
-  if ( check_ray_quads( mins, maxs ) ) return;
+      if ( std::abs( delta_yaw ) > ideal_rot )
+        ideal_rot = 0.f;
+      else if ( cmd->m_cmd_nr % 2 )
+        ideal_rot *= -1;
 
-  pm.fraction = fraction;
-  pm.endpos = endpos;
+      cmd->m_sidemove = cmd->m_cmd_nr % 2 ? 450.f : -450.f;
+      cmd->m_forwardmove = 0.f;
+      rotate_movement( cmd, std::remainderf( ideal_yaw + ideal_rot, 360.f ) );
+    } else {
+      float move_yaw = math::vector_angles( vec3_t( ),
+        vec3_t( cmd->m_forwardmove, cmd->m_sidemove, 0.f )
+      ).y;
+      float rot = cmd->m_mousedx < 0.f ? -90.f : 90.f;
+      cmd->m_forwardmove = 450.f;
+      cmd->m_sidemove = 0.f;
+      rotate_movement( cmd, move_yaw + rot );
+    }
+  }
 }
 
-void auto_strafe_to_edge( user_cmd_t* cmd, float wish_yaw, vec3_t& vel ) {
-  float speed = vel.length2d( );
-  if ( speed < 1.f ) return;
+vec3_t extrapolate_edge_bug( c_base_player* ent, vec3_t& origin, vec3_t& velocity ) {
+  static auto sv_jump_impulse = g_csgo.m_cvar( )->FindVar( xors( "sv_jump_impulse" ) );
+  static auto sv_gravity = g_csgo.m_cvar( )->FindVar( xors( "sv_gravity" ) );
 
-  float ideal = ( speed > 15.f ) ? RAD2DEG( atan2( 15.f, speed ) ) : 90.f;
-  float delta = RAD2DEG( atan2( cmd->m_sidemove, cmd->m_forwardmove ) );
-  float difference = fmod( wish_yaw - delta + 360.f, 360.f );
+  auto& min = ent->m_vecMins( );
+  auto& max = ent->m_vecMaxs( );
 
-  if ( difference > 180.f )
-    difference -= 360.f;
+  auto& start = origin;
+  auto end = start + velocity * TICK_INTERVAL( );
 
-  float move_angle = ideal * difference / 90.f;
+  CTraceFilter f;
+  CGameTrace tr;
+  Ray_t ray;
 
-  cmd->m_sidemove = std::clamp( move_angle, -450.f, 450.f );
+  ray.Init( start, end, min, max );
+  f.pSkip = ent;
+
+  g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &f, &tr );
+
+  if ( tr.fraction != 1.f ) {
+    for ( int idx = 0; idx < 2; ++idx ) {
+      velocity -= tr.plane.normal * velocity.dot( tr.plane.normal );
+      auto dot = velocity.dot( tr.plane.normal );
+      if ( dot < 0.f ) velocity -= dot * tr.plane.normal;
+
+      end = tr.endpos + ( velocity * TICK_INTERVAL( ) * ( 1.f - tr.fraction ) );
+      ray.Init( tr.endpos, end, min, max );
+      g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &f, &tr );
+
+      if ( tr.fraction == 1.f )
+        break;
+    }
+  }
+  
+  end = tr.endpos;
+  end.z -= 2.f;
+
+  ray.Init( tr.endpos, end, min, max );
+  g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &f, &tr );
+
+  if ( tr.fraction != 1.f && tr.plane.normal.z > 0.7f )
+    velocity.z = sv_jump_impulse->get_float( );
+  else
+    velocity.z -= sv_gravity->get_float( ) * TICK_INTERVAL( );
+
+  return tr.endpos;
 }
 
 void c_movement::edge_bug( ) {
@@ -224,91 +268,70 @@ void c_movement::edge_bug( ) {
   vec3_t view_ang = g_ctx.m_local->m_angEyeAngles( );
   vec3_t pred_vel = g_ctx.m_local->m_vecVelocity( );
   vec3_t pred_pos = g_ctx.m_local->m_vecOrigin( );
-  vec3_t post_pred_vel, post_pred_pos;
-  float closest_distance = FLT_MAX;
-  vec3_t old_vel = pred_vel;
-  vec3_t best_pos, best_vel;
-  view_ang.y += 90.f;
+  vec3_t post_pred_vel{}, post_pred_pos{};
+  vec3_t best_pos{}, best_vel{};
   should_bug = false;
   edge_dist.clear( );
   bug_path.clear( );
 
-  for ( int i = 0; i < 25; ++i ) {
-    pred_pos = g_cheat.m_prediction.aimware_extrapolate(
-      g_ctx.m_local, pred_pos, pred_vel
-    );
+  int max_ticks = util::is_low_fps() ?
+    ( 1 / g_csgo.m_globals->m_frametime ) / 2 : // fps / 2
+    1 / g_csgo.m_globals->m_interval_per_tick; // tickrate ( i.e. 64, 128, etc )
 
-    CGameTrace trace;
-    g_cheat.m_prediction.trace_player_bbox(
-      g_ctx.m_local, pred_pos, pred_pos + pred_vel * TICK_INTERVAL( ), &trace
-    );
+  const int num_paths = 10;
+  const float ang_step = 10.f;
 
-    if ( trace.fraction != 1.0f )
-      break;
-    
-    post_pred_vel = pred_vel;
-    post_pred_pos = g_cheat.m_prediction.aimware_extrapolate(
-      g_ctx.m_local, pred_pos, post_pred_vel
-    );
-    
-    CGameTrace t_ground;
-    vec3_t mins = g_ctx.m_local->m_vecMins( );
-    vec3_t maxs = g_ctx.m_local->m_vecMaxs( );
-    trace_player_collision(
-      pred_pos, pred_pos - vec3_t( 0.f, 0.f, 32.f ),
-      mins, maxs, t_ground
-    );
+  for ( int idx = 0; idx < num_paths; ++idx ) {
+    float rads_off = DEG2RAD( ( idx - ( num_paths / 2 ) ) * ang_step );
+    vec3_t wishdir = { pred_vel.x, pred_vel.y, 0.f };
+    float cos_rot = cos( rads_off );
+    float sin_rot = sin( rads_off );
+    wishdir = {
+      wishdir.x * cos_rot - wishdir.y * sin_rot,
+      wishdir.x * sin_rot + wishdir.y * cos_rot,
+      wishdir.z
+    };
+    wishdir.normalize_vector( );
 
-    float dist_to_grnd = pred_pos.z - t_ground.endpos.z;
-    edge_dist.push_back(
-      dist_to_grnd
-    );
+    const float wishspeed = g_ctx.m_local->get_weapon( )->get_wpn_info( )->max_speed;
+    vec3_t path_pred_pos = pred_pos;
+    vec3_t path_pred_vel = pred_vel;
+    vec3_t prev_pos = path_pred_pos;
 
-    bug_path.push_back( {
-      pred_pos, post_pred_pos
-    });
+    for ( int tick = 0; tick < max_ticks; ++tick ) {
+      g_cheat.m_prediction.air_accelerate( g_ctx.m_local,
+        path_pred_pos, path_pred_vel, wishdir, wishspeed
+      );
 
-    if ( edge_bug_detect( old_vel, pred_vel, post_pred_vel ) ) {
-      hit_path = bug_path;
-      best_pos = post_pred_pos;
-      best_vel = post_pred_vel;
-      should_bug = true;
-      break;
-    } else {
-      float distance = ( post_pred_pos - pred_pos ).length( );
-      if ( distance < closest_distance ) {
-        closest_distance = distance;
-        best_pos = post_pred_pos;
-        best_vel = post_pred_vel;
-        // break here ?
-      }
-    }
-  }
-  
-  if ( should_bug ) {
-    vec3_t dir = best_pos - g_ctx.m_local->m_vecOrigin( );
-    float ideal_speed = best_vel.length2d( );
-    dir.normalize_vector( );
+      path_pred_pos = extrapolate_edge_bug(
+        g_ctx.m_local, path_pred_pos, path_pred_vel
+      );
 
-    float speed_delta = ideal_speed - g_ctx.m_local->m_vecVelocity( ).length2d( );
+      bug_path.push_back({ prev_pos, path_pred_pos });
+      prev_pos = path_pred_pos;
 
-    auto_strafe_to_edge( m_ucmd,
-      RAD2DEG( atan2( dir.y, dir.x ) ),
-      g_ctx.m_local->m_vecVelocity( )
-    );
-
-    for ( const auto& distance : edge_dist ) {
-      if ( distance < 4.f ) {
-        m_ucmd->m_buttons |= IN_DUCK;
+      if ( edge_bug_detect( g_ctx.m_local->m_vecVelocity( ), path_pred_vel, g_ctx.m_local->m_vecVelocity( ) ) ) {
+        hit_path.clear( );
+        hit_path = bug_path;
+        best_pos = path_pred_pos;
+        best_vel = path_pred_vel;
+        should_bug = true;
+        edge_dist.push_back(
+          ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
+        );
         break;
       }
     }
 
-    rotate_movement( m_ucmd, RAD2DEG( atan2( dir.x, dir.y ) ) );
-    return;
-  }
+    if ( should_bug ) {
+      strafe_to_edge( m_ucmd, best_pos );
 
-  old_vel_z = g_ctx.m_local->m_vecVelocity( ).z;
+      if ( edge_dist.back( ) < 4.f )
+        m_ucmd->m_buttons |= IN_DUCK;
+  
+      break;
+    }
+  }
 }
 
 void c_movement::air_duck( ) {

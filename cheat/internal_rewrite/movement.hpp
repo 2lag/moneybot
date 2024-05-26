@@ -24,7 +24,8 @@ class c_movement {
 	void circle_strafe( );
     void fast_walk( );
     void air_duck( );
-    
+
+private:
   std::vector<std::pair<vec3_t, vec3_t>> bug_path;
 public:
   std::vector<std::pair<vec3_t, vec3_t>> hit_path;

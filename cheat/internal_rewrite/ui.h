@@ -21,8 +21,6 @@
 
 #include "js_mgr.h"
 
-#include "day.h"
-
 namespace ui
 {
 	extern std::shared_ptr< ui::c_menu > menu;
@@ -46,6 +44,7 @@ namespace ui
 				//don't ask
 				date_str.c_str( ) );
 #else
+      #define day "hi"
 #ifdef day
       date_str = std::string( "day | lifetime" );
 #endif
