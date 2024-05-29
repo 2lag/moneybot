@@ -283,7 +283,7 @@ void c_movement::edge_bug( ) {
   const float ang_step = max_ang / num_paths;
 
   for ( int idx = 0; idx < num_paths; ++idx ) {
-    float rads_off = DEG2RAD( ( idx - ( num_paths / 2 ) ) * ang_step );
+    float rads_off = ( idx - ( num_paths / 2 ) ) * ang_step;
     vec3_t wishdir = { pred_vel.x, pred_vel.y, 0.f };
     float cos_rot = cos( rads_off );
     float sin_rot = sin( rads_off );
@@ -297,7 +297,6 @@ void c_movement::edge_bug( ) {
     vec3_t path_pred_pos = pred_pos;
     vec3_t path_pred_vel = pred_vel;
     vec3_t prev_pos = path_pred_pos;
-    vec3_t next_pos = { };
 
     for ( int tick = 0; tick < max_ticks; ++tick ) {
       g_cheat.m_prediction.air_accelerate( g_ctx.m_local,
@@ -315,21 +314,24 @@ void c_movement::edge_bug( ) {
         hit_path = bug_path;
         best_pos = path_pred_pos;
         best_vel = path_pred_vel;
-        
-        if ( next_pos.is_zero( ) )
-          next_pos = path_pred_pos;
 
         should_bug = true;
         edge_dist.push_back(
           ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
         );
 
-    if ( should_bug ) {
-      strafe_to_edge( m_ucmd, next_pos );
+        if ( should_bug ) {
+          for ( int idx = 0; idx < hit_path.size( ); ++idx ) {
+            if ( edge_dist.back( ) < 4.f ) m_ucmd->m_buttons |= IN_DUCK;
+            else strafe_to_edge( m_ucmd, hit_path.at( idx ).second );
 
-      if ( edge_dist.back( ) < 4.f )
-        m_ucmd->m_buttons |= IN_DUCK;
-    }
+            /*vec3_t p_orig = g_ctx.m_local->m_vecOrigin( );
+            printf( "desired: %0.1f %0.1f %0.1f\tactual: %0.1f %0.1f %0.1f\n",
+              hit_path.at( idx ).second.x, hit_path.at( idx ).second.y, hit_path.at( idx ).second.z,
+              p_orig.x, p_orig.y, p_orig.z
+            );*/
+          }
+        }
         break;
       }
     }
