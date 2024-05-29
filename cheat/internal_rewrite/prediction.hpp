@@ -90,6 +90,8 @@ public:
 	void try_touch_ground( c_base_player*, const vec3_t& start, const vec3_t& end, const vec3_t& mins, const vec3_t& maxs, CGameTrace* pm );
 	void try_touch_ground_in_quadrants( c_base_player*, const vec3_t& start, const vec3_t& end, CGameTrace* pm );
 
+private: // for deadstrafe
+  float get_surface_friction( float zvel, int mt );
 };
 
 END_REGION

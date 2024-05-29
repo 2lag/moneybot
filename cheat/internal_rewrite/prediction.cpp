@@ -321,11 +321,15 @@ void c_prediction::air_move( c_base_player* player, vec3_t& origin, vec3_t& velo
 	wishvel[ 2 ] = 0.f;
 
 	wishdir = wishvel;
-	wishdir.normalize_vector( );
 
 	wishspeed = acceleration.length( ); // probably wrong
 
 	air_accelerate( player, origin, old_velocity, wishdir, wishspeed );
+}
+
+float c_prediction::get_surface_friction( float zvel, int mt ) {
+  return ( ( zvel > 0.0f && zvel < 140.f ) && mt != MOVETYPE_NOCLIP ) ?
+		0.25f : 1.f;
 }
 
 void c_prediction::air_accelerate( c_base_player* player, vec3_t& origin, vec3_t& velocity, vec3_t& wishdir, float wishspeed ) {
@@ -338,12 +342,14 @@ void c_prediction::air_accelerate( c_base_player* player, vec3_t& origin, vec3_t
 
 	float currentspeed = velocity.dot( wishdir );
 
+	wishdir.normalize_vector( );
+
 	float addspeed = wishspd - currentspeed;
 
 	if( addspeed <= 0 )
 		return;
 
-	float accelspeed = sv_airaccelerate->get_float( ) * wishspeed * TICK_INTERVAL( );
+	float accelspeed = sv_airaccelerate->get_float( ) * wishspeed * TICK_INTERVAL( ) * get_surface_friction( player->m_vecVelocity( ).z, player->m_nMoveType( ) );
 
 	if( accelspeed > addspeed )
 		accelspeed = addspeed;

@@ -25,9 +25,8 @@ class c_movement {
     void fast_walk( );
     void air_duck( );
 
-private:
-  std::vector<std::pair<vec3_t, vec3_t>> bug_path;
 public:
+  std::vector<std::pair<vec3_t, vec3_t>> bug_path;
   std::vector<std::pair<vec3_t, vec3_t>> hit_path;
 
 	void operator()( user_cmd_t* ucmd ) {
