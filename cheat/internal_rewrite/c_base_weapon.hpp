@@ -116,7 +116,7 @@ class weapon_info_t {
     char  pad_0084[ 4 ];   // 0x0084
     char* hud_name;        // 0x0088
     char* weapon_name2;    // 0x008C
-    char  pad_0090[ 60 ];  // 0x0090
+    char  pad_0090[ 64 ];  // 0x0090
     int   type;
     int   price;        // 0x00CC
     int   kill_reward;  // 0x00D0
