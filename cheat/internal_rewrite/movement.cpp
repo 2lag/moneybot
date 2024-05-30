@@ -161,25 +161,34 @@ void find_max_strafe_angle( vec3_t pred_vel, vec3_t pred_pos, float max_speed, f
 
     if ( fabs( ang_delta ) > max_ang ) {
       max_ang = fabs( ang_delta );
-      max_ang *= 3; // 1 = barebones, 2 = perf, 3 = willingly slowdown
+      max_ang *= 2; // 1 = barebones, 2 = perf, 3 = willingly slowdown
     }
   }
 }
 
-bool edge_bug_detect( const vec3_t& old_vel, const vec3_t& pred_vel, const vec3_t& post_vel ) {
-  static cvar_t* sv_gravity = g_csgo.m_cvar( )->FindVar( xors( "sv_gravity" ) );
-  float gravity = sv_gravity->get_float( );
+bool edge_bug_detect( c_base_player* ent, const vec3_t& _origin, const vec3_t& pred_vel ) {
+  CGameTrace tr;
 
-  if ( old_vel.z < -6.f && pred_vel.z > old_vel.z && pred_vel.z < -6.f && old_vel.length2d( ) <= pred_vel.length2d( ) ) {
-    const float gravity_vel_const = roundf( -gravity * TICK_INTERVAL( ) + pred_vel.z );
-    if ( gravity_vel_const == roundf( post_vel.z ) )
-      return true;
-  }
+  vec3_t vel = pred_vel;
+  vec3_t min = ent->m_vecMins( );
+  vec3_t max = ent->m_vecMaxs( );
+  vec3_t origin = _origin;
+  vec3_t end = {
+    origin.x,
+    origin.y,
+    origin.z - 2.f
+  };
+  g_cheat.m_prediction.try_touch_ground( ent, origin, end, min, max, &tr );
   
-  float ebz_vel = gravity * 0.5f * TICK_INTERVAL( );
-  if ( pred_vel.length2d( ) <= post_vel.length2d( ) && -ebz_vel > pred_vel.z && round( post_vel.z ) == round( -ebz_vel ) )
-      return true;
+  if ( tr.DidHit( ) )
+    vel.z = 0;
 
+  origin += vel;
+  end += vel;
+  g_cheat.m_prediction.try_touch_ground_in_quadrants( ent, origin, end, &tr );
+  
+  if ( !tr.DidHit( ) )
+    return true;
   return false;
 }
 
@@ -231,6 +240,7 @@ vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, b
   return tr.endpos;
 }
 
+int eb_count;
 void c_movement::edge_bug( ) {
   if( !g_settings.misc.edge_bug )
     return;
@@ -258,7 +268,7 @@ void c_movement::edge_bug( ) {
 
   // swap off static values n come up with good dynamics
   const int max_ticks = util::is_low_fps( ) ? 32 : 64;
-  const int num_paths = util::is_low_fps( ) ? 8 : 24;
+  const int num_paths = util::is_low_fps( ) ? 8 : 20;
 
   float max_ang = 0.f;
   const float max_speed = g_ctx.m_local->get_weapon( )->get_wpn_info( )->max_speed;
@@ -298,22 +308,19 @@ void c_movement::edge_bug( ) {
       bug_path.push_back({ prev_pos, path_pred_pos });
       prev_pos = path_pred_pos;
 
-      if ( !edge_bug_detect( g_ctx.m_local->m_vecVelocity( ), path_pred_vel, g_ctx.m_local->m_vecVelocity( ) ) ) {
-        run_edge_bug = false;
+      if ( !edge_bug_detect( g_ctx.m_local, path_pred_pos, path_pred_vel ) )
         continue;
-      }
 
-      // best_pos = path_pred_pos;
-      // best_vel = path_pred_vel;
+      if ( !hit_path.empty( ) )
+        continue;
 
-      if ( hit_path.empty( ) ) {
-        hit_path = bug_path;
-        run_edge_bug = true;
-      }
+      hit_path = bug_path;
 
       edge_dist.push_back(
         ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
       );
+
+      run_edge_bug = true;
 
       break;
     }
@@ -321,9 +328,6 @@ void c_movement::edge_bug( ) {
 }
 
 void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
-  cmd->m_forwardmove = 0;
-  cmd->m_sidemove = 0;
-  
   float yaw = g_csgo.m_engine( )->GetViewAngles( );
   vec3_t vel = g_ctx.m_local->m_vecVelocity( );
   float speed = vel.length2d( );
@@ -353,17 +357,19 @@ void c_movement::perform_edge_bug( ) {
   if ( g_ctx.m_local->m_nMoveType( ) == MOVETYPE_LADDER )
     return;
 
-  if ( hit_path.empty( ) || !run_edge_bug )
+  if ( hit_path.empty( ) ) {
+    run_edge_bug = false;
     return;
+  }
 
+  if ( !run_edge_bug )
+    return;
+  
+  strafe_to_edge( m_ucmd, hit_path.front( ).second );
   hit_path.erase( hit_path.begin( ) );
-  
-  if ( hit_path.empty( ) ) return;
-  
-  strafe_to_edge( m_ucmd, hit_path.front( ).first );
 
-  if ( !edge_dist.empty( ) && edge_dist.back( ) < 4.f )
-    m_ucmd->m_buttons |= IN_DUCK; // only on last one / two of hit_path ?
+  if ( !edge_dist.empty( ) && edge_dist.back( ) < 4.f && hit_path.size( ) < 2 )
+    m_ucmd->m_buttons |= IN_DUCK;
 }
 
 void c_movement::air_duck( ) {

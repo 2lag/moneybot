@@ -20,7 +20,7 @@ class c_movement {
 	void edge_jump( );
 	void jump_stats( );
 
-	bool  get_best_direction( float ideal_step, float left, float right, float weight );
+	bool get_best_direction( float ideal_step, float left, float right, float weight );
 	float get_best_strafe_step( float speed, vec3_t direction );
 	float get_best_strafe_angle( );
 	void circle_strafe( );
