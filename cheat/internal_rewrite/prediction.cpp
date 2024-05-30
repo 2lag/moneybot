@@ -349,7 +349,7 @@ void c_prediction::air_accelerate( c_base_player* player, vec3_t& origin, vec3_t
 	if( addspeed <= 0 )
 		return;
 
-	float accelspeed = sv_airaccelerate->get_float( ) * wishspeed * TICK_INTERVAL( ) * get_surface_friction( player->m_vecVelocity( ).z, player->m_nMoveType( ) );
+	float accelspeed = sv_airaccelerate->get_float( ) * wishspeed * TICK_INTERVAL( ) * get_surface_friction( velocity.z, player->m_nMoveType( ) );
 
 	if( accelspeed > addspeed )
 		accelspeed = addspeed;

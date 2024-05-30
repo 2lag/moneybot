@@ -158,7 +158,7 @@ bool edge_bug_detect( const vec3_t& old_vel, const vec3_t& pred_vel, const vec3_
   return false;
 }
 
-vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity ) {
+vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, bool& stop_calc ) {
   static auto sv_jump_impulse = g_csgo.m_cvar( )->FindVar( xors( "sv_jump_impulse" ) );
   static auto sv_gravity = g_csgo.m_cvar( )->FindVar( xors( "sv_gravity" ) );
 
@@ -199,7 +199,7 @@ vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity ) 
   g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &f, &tr );
 
   if ( tr.fraction != 1.f && tr.plane.normal.z > 0.7f )
-    velocity.z = sv_jump_impulse->get_float( );
+    stop_calc = true;
   else
     velocity.z -= sv_gravity->get_float( ) * TICK_INTERVAL( );
 
@@ -219,7 +219,7 @@ void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
   float target_yaw = math::vector_angles( vec3_t( ), move_dir ).y;
   float delta_yaw = remainderf( target_yaw - yaw, 360.f );
 
-  cmd->m_sidemove = delta_yaw > 0 ? 450.f : -450.f;
+  cmd->m_sidemove = delta_yaw > 0 ? 450.f : -450.f; // need this ?
   rotate_movement( cmd, delta_yaw );
 }
 
@@ -249,11 +249,10 @@ void c_movement::edge_bug( ) {
   should_bug = false;
   edge_dist.clear( );
   bug_path.clear( );
-  hit_path.clear( );
 
   // swap off static values n come up with good dynamics
   const int max_ticks = util::is_low_fps( ) ? 32 : 64;
-  const int num_paths = util::is_low_fps( ) ? 8 : 16;
+  const int num_paths = util::is_low_fps( ) ? 8 : 24;
 
   float max_ang = 0.f;
   const float max_speed = g_ctx.m_local->get_weapon( )->get_wpn_info( )->max_speed;
@@ -276,64 +275,61 @@ void c_movement::edge_bug( ) {
     float ang_delta = atan2( t_vel.y, t_vel.x ) - atan2( pred_vel.y, pred_vel.x );
     float d_speed = ( t_vel - pred_vel ).length2d( );
 
-    if ( fabs( ang_delta ) > max_ang )
+    if ( fabs( ang_delta ) > max_ang ) {
       max_ang = fabs( ang_delta );
+      max_ang *= 2;
+    }
   }
 
   const float ang_step = max_ang / num_paths;
-
   for ( int idx = 0; idx < num_paths; ++idx ) {
-    float rads_off = ( idx - ( num_paths / 2 ) ) * ang_step;
-    vec3_t wishdir = { pred_vel.x, pred_vel.y, 0.f };
-    float cos_rot = cos( rads_off );
-    float sin_rot = sin( rads_off );
-    wishdir = {
-      wishdir.x * cos_rot - wishdir.y * sin_rot,
-      wishdir.x * sin_rot + wishdir.y * cos_rot,
-      wishdir.z
-    };
-    wishdir.normalize_vector( );
-
     vec3_t path_pred_pos = pred_pos;
     vec3_t path_pred_vel = pred_vel;
     vec3_t prev_pos = path_pred_pos;
-
+    
+    bool stop_calc = false;
     for ( int tick = 0; tick < max_ticks; ++tick ) {
+      if ( stop_calc ) break;
+
+      float rads_off = ( idx - ( num_paths / 2 ) ) * ang_step * ( tick + 1 );
+      vec3_t wishdir = {
+        pred_vel.x * cos( rads_off ) - pred_vel.y * sin( rads_off ),
+        pred_vel.x * sin( rads_off ) - pred_vel.y * cos( rads_off ),
+        0.f
+      };
+      wishdir.normalize_vector( );
+
       g_cheat.m_prediction.air_accelerate( g_ctx.m_local,
         path_pred_pos, path_pred_vel, wishdir, max_speed
       );
 
       path_pred_pos = extrapolate_edge(
-        g_ctx.m_local, path_pred_pos, path_pred_vel
+        g_ctx.m_local, path_pred_pos, path_pred_vel, stop_calc
       );
 
       bug_path.push_back({ prev_pos, path_pred_pos });
       prev_pos = path_pred_pos;
 
-      if ( edge_bug_detect( g_ctx.m_local->m_vecVelocity( ), path_pred_vel, g_ctx.m_local->m_vecVelocity( ) ) ) {
-        hit_path = bug_path;
-        best_pos = path_pred_pos;
-        best_vel = path_pred_vel;
+      if ( !edge_bug_detect( g_ctx.m_local->m_vecVelocity( ), path_pred_vel, g_ctx.m_local->m_vecVelocity( ) ) )
+        continue;
 
-        should_bug = true;
-        edge_dist.push_back(
-          ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
-        );
+      hit_path = bug_path;
+      best_pos = path_pred_pos;
+      best_vel = path_pred_vel;
 
-        if ( should_bug ) {
-          for ( int idx = 0; idx < hit_path.size( ); ++idx ) {
-            if ( edge_dist.back( ) < 4.f ) m_ucmd->m_buttons |= IN_DUCK;
-            else strafe_to_edge( m_ucmd, hit_path.at( idx ).second );
+      should_bug = true;
+      edge_dist.push_back(
+        ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
+      );
 
-            /*vec3_t p_orig = g_ctx.m_local->m_vecOrigin( );
-            printf( "desired: %0.1f %0.1f %0.1f\tactual: %0.1f %0.1f %0.1f\n",
-              hit_path.at( idx ).second.x, hit_path.at( idx ).second.y, hit_path.at( idx ).second.z,
-              p_orig.x, p_orig.y, p_orig.z
-            );*/
-          }
-        }
-        break;
+      if ( !should_bug )
+        continue;
+
+      for ( int idx = 0; idx < hit_path.size( ) - 1; ++idx ) {
+        if ( edge_dist.back( ) < 4.f ) m_ucmd->m_buttons |= IN_DUCK;
+        else strafe_to_edge( m_ucmd, hit_path.at( idx + 1 ).first );
       }
+      break;
     }
   }
 }

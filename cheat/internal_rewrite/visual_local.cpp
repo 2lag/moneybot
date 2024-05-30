@@ -254,19 +254,26 @@ namespace features
           box_col = g_settings.menu.menu_color;
 
     for ( const auto& segment : g_cheat.m_movement.bug_path ) {
-      if ( g_cheat.m_movement.hit_path.size( ) > 0 ) {
-        if ( segment.first == g_cheat.m_movement.hit_path.front( ).first ) {
-          box_col = clr_t( 105, 231, 105 ); 
-          line_col = clr_t( 0, 128, 0 );
-        }
-      }
-
       vec2_t start_w2s = util::screen_transform( segment.first );
       vec2_t end_w2s = util::screen_transform( segment.second );
 
       draw_line( start_w2s, end_w2s, line_col );
 
       draw_filled_rect( end_w2s.x - 3, end_w2s.y - 3, 6, 6, box_col );
+    }
+
+    if ( g_cheat.m_movement.hit_path.size( ) > 0 ) {
+      box_col = clr_t( 105, 231, 105 ); 
+      line_col = clr_t( 0, 128, 0 );
+
+      for ( const auto& segment : g_cheat.m_movement.hit_path ) {
+        vec2_t start_w2s = util::screen_transform( segment.first );
+        vec2_t end_w2s = util::screen_transform( segment.second );
+
+        draw_line( start_w2s, end_w2s, line_col );
+
+        draw_filled_rect( end_w2s.x - 3, end_w2s.y - 3, 6, 6, box_col );
+      }
     }
     #endif
   }
