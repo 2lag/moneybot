@@ -129,7 +129,6 @@ void c_movement::edge_jump( ) {
 }
 
 std::vector<float> edge_dist;
-bool should_bug = false;
 
 template <typename t>
 void scale_vector( vec3_t& vec, t first_min, t first_max, t second_min, t second_max ) {
@@ -139,6 +138,32 @@ void scale_vector( vec3_t& vec, t first_min, t first_max, t second_min, t second
     map( vec.y, one, two ),
     0.f
   };
+}
+
+void find_max_strafe_angle( vec3_t pred_vel, vec3_t pred_pos, float max_speed, float& max_ang ) {
+  for ( int idx = 0; idx <= 180; idx += 1 ) {
+    float rads_off( DEG2RAD( idx ) );
+    vec3_t t_wishdir {
+      cos( rads_off ),
+      sin( rads_off ),
+      0.f
+    };
+    t_wishdir.normalize_vector( );
+    scale_vector< int >( t_wishdir, 0, 1, 0, max_speed );
+
+    vec3_t t_vel = pred_vel;
+    g_cheat.m_prediction.air_accelerate(
+      g_ctx.m_local, pred_pos, t_vel, t_wishdir, max_speed
+    );
+
+    float ang_delta = atan2( t_vel.y, t_vel.x ) - atan2( pred_vel.y, pred_vel.x );
+    float d_speed = ( t_vel - pred_vel ).length2d( );
+
+    if ( fabs( ang_delta ) > max_ang ) {
+      max_ang = fabs( ang_delta );
+      max_ang *= 3; // 1 = barebones, 2 = perf, 3 = willingly slowdown
+    }
+  }
 }
 
 bool edge_bug_detect( const vec3_t& old_vel, const vec3_t& pred_vel, const vec3_t& post_vel ) {
@@ -206,23 +231,6 @@ vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, b
   return tr.endpos;
 }
 
-void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
-  cmd->m_forwardmove = 0;
-  cmd->m_sidemove = 0;
-  
-  float yaw = g_csgo.m_engine( )->GetViewAngles( );
-  vec3_t vel = g_ctx.m_local->m_vecVelocity( );
-  float speed = vel.length2d( );
-  vec3_t move_dir = target_dir;
-  move_dir.normalize_vector( );
-
-  float target_yaw = math::vector_angles( vec3_t( ), move_dir ).y;
-  float delta_yaw = remainderf( target_yaw - yaw, 360.f );
-
-  cmd->m_sidemove = delta_yaw > 0 ? 450.f : -450.f; // need this ?
-  rotate_movement( cmd, delta_yaw );
-}
-
 void c_movement::edge_bug( ) {
   if( !g_settings.misc.edge_bug )
     return;
@@ -246,9 +254,7 @@ void c_movement::edge_bug( ) {
          pred_pos = start_pos,
          best_vel{ },
          best_pos{ };
-  should_bug = false;
   edge_dist.clear( );
-  bug_path.clear( );
 
   // swap off static values n come up with good dynamics
   const int max_ticks = util::is_low_fps( ) ? 32 : 64;
@@ -257,35 +263,17 @@ void c_movement::edge_bug( ) {
   float max_ang = 0.f;
   const float max_speed = g_ctx.m_local->get_weapon( )->get_wpn_info( )->max_speed;
 
-  for ( int idx = 0; idx <= 180; idx += 1 ) {
-    float rads_off( DEG2RAD( idx ) );
-    vec3_t t_wishdir {
-      cos( rads_off ),
-      sin( rads_off ),
-      0.f
-    };
-    t_wishdir.normalize_vector( );
-    scale_vector< int >( t_wishdir, 0, 1, 0, max_speed );
-
-    vec3_t t_vel = pred_vel;
-    g_cheat.m_prediction.air_accelerate(
-      g_ctx.m_local, pred_pos, t_vel, t_wishdir, max_speed
-    );
-
-    float ang_delta = atan2( t_vel.y, t_vel.x ) - atan2( pred_vel.y, pred_vel.x );
-    float d_speed = ( t_vel - pred_vel ).length2d( );
-
-    if ( fabs( ang_delta ) > max_ang ) {
-      max_ang = fabs( ang_delta );
-      max_ang *= 2;
-    }
-  }
+  find_max_strafe_angle(
+    pred_vel, pred_pos,
+    max_speed, max_ang
+  );
 
   const float ang_step = max_ang / num_paths;
   for ( int idx = 0; idx < num_paths; ++idx ) {
     vec3_t path_pred_pos = pred_pos;
     vec3_t path_pred_vel = pred_vel;
     vec3_t prev_pos = path_pred_pos;
+    bug_path.clear( );
     
     bool stop_calc = false;
     for ( int tick = 0; tick < max_ticks; ++tick ) {
@@ -310,28 +298,72 @@ void c_movement::edge_bug( ) {
       bug_path.push_back({ prev_pos, path_pred_pos });
       prev_pos = path_pred_pos;
 
-      if ( !edge_bug_detect( g_ctx.m_local->m_vecVelocity( ), path_pred_vel, g_ctx.m_local->m_vecVelocity( ) ) )
+      if ( !edge_bug_detect( g_ctx.m_local->m_vecVelocity( ), path_pred_vel, g_ctx.m_local->m_vecVelocity( ) ) ) {
+        run_edge_bug = false;
         continue;
+      }
 
-      hit_path = bug_path;
-      best_pos = path_pred_pos;
-      best_vel = path_pred_vel;
+      // best_pos = path_pred_pos;
+      // best_vel = path_pred_vel;
 
-      should_bug = true;
+      if ( hit_path.empty( ) ) {
+        hit_path = bug_path;
+        run_edge_bug = true;
+      }
+
       edge_dist.push_back(
         ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
       );
 
-      if ( !should_bug )
-        continue;
-
-      for ( int idx = 0; idx < hit_path.size( ) - 1; ++idx ) {
-        if ( edge_dist.back( ) < 4.f ) m_ucmd->m_buttons |= IN_DUCK;
-        else strafe_to_edge( m_ucmd, hit_path.at( idx + 1 ).first );
-      }
       break;
     }
   }
+}
+
+void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
+  cmd->m_forwardmove = 0;
+  cmd->m_sidemove = 0;
+  
+  float yaw = g_csgo.m_engine( )->GetViewAngles( );
+  vec3_t vel = g_ctx.m_local->m_vecVelocity( );
+  float speed = vel.length2d( );
+  vec3_t move_dir = target_dir;
+  move_dir.normalize_vector( );
+
+  float target_yaw = math::vector_angles( vec3_t( ), move_dir ).y;
+  float delta_yaw = remainderf( target_yaw - yaw, 360.f );
+
+  cmd->m_sidemove = delta_yaw > 0 ? 450.f : -450.f; // need this ?
+  rotate_movement( cmd, delta_yaw );
+}
+
+void c_movement::perform_edge_bug( ) {
+  if( !g_settings.misc.edge_bug )
+    return;
+
+  if ( !g_input.is_key_pressed( ( VirtualKeys_t )g_settings.misc.edge_bug_key( ) ) )
+    return;
+
+  if ( !g_ctx.m_local->is_alive( ) )
+    return;
+
+  if ( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND )
+    return;
+
+  if ( g_ctx.m_local->m_nMoveType( ) == MOVETYPE_LADDER )
+    return;
+
+  if ( hit_path.empty( ) || !run_edge_bug )
+    return;
+
+  hit_path.erase( hit_path.begin( ) );
+  
+  if ( hit_path.empty( ) ) return;
+  
+  strafe_to_edge( m_ucmd, hit_path.front( ).first );
+
+  if ( !edge_dist.empty( ) && edge_dist.back( ) < 4.f )
+    m_ucmd->m_buttons |= IN_DUCK; // only on last one / two of hit_path ?
 }
 
 void c_movement::air_duck( ) {

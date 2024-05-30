@@ -14,7 +14,9 @@ class c_movement {
 	void bhop( );
 	void auto_strafer( );
 
-  void edge_bug();
+  void edge_bug( );
+  void perform_edge_bug( );
+
 	void edge_jump( );
 	void jump_stats( );
 
@@ -28,10 +30,12 @@ class c_movement {
 public:
   std::vector<std::pair<vec3_t, vec3_t>> bug_path;
   std::vector<std::pair<vec3_t, vec3_t>> hit_path;
+  bool run_edge_bug = false;
 
 	void operator()( user_cmd_t* ucmd ) {
 		m_ucmd = ucmd;
-    edge_bug();
+    edge_bug( );
+    perform_edge_bug( );
 		auto_strafer( );
 		circle_strafe( );
 		fast_walk( );
