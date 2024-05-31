@@ -491,7 +491,7 @@ void c_prediction::try_touch_ground( c_base_player* player, const vec3_t& start,
 	CTraceFilter filter;
 	filter.pSkip = player;
 
-	g_csgo.m_trace( )->TraceRay( ray, MASK_SOLID & ~CONTENTS_MONSTER, &filter, pm );
+	g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID & ~CONTENTS_MONSTER, &filter, pm );
 }
 
 void c_prediction::try_touch_ground_in_quadrants( c_base_player* player, const vec3_t& start, const vec3_t& end, CGameTrace* pm ) {

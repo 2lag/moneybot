@@ -161,7 +161,7 @@ void find_max_strafe_angle( vec3_t pred_vel, vec3_t pred_pos, float max_speed, f
 
     if ( fabs( ang_delta ) > max_ang ) {
       max_ang = fabs( ang_delta );
-      max_ang *= 2; // 1 = barebones, 2 = perf, 3 = willingly slowdown
+      max_ang *= 3; // 1 = barebones, 2 = perf, 3 = willingly slowdown
     }
   }
 }
@@ -182,14 +182,16 @@ bool edge_bug_detect( c_base_player* ent, const vec3_t& _origin, const vec3_t& p
   
   if ( tr.DidHit( ) )
     vel.z = 0;
+  else
+    return false;
 
   origin += vel;
   end += vel;
   g_cheat.m_prediction.try_touch_ground_in_quadrants( ent, origin, end, &tr );
   
   if ( !tr.DidHit( ) )
-    return true;
-  return false;
+    return true; // buggin
+  return false; // ground
 }
 
 vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, bool& stop_calc ) {
@@ -287,7 +289,7 @@ void c_movement::edge_bug( ) {
     
     bool stop_calc = false;
     for ( int tick = 0; tick < max_ticks; ++tick ) {
-      if ( stop_calc ) break;
+      if ( stop_calc || !hit_path.empty( ) ) break;
 
       float rads_off = ( idx - ( num_paths / 2 ) ) * ang_step * ( tick + 1 );
       vec3_t wishdir = {
@@ -311,9 +313,6 @@ void c_movement::edge_bug( ) {
       if ( !edge_bug_detect( g_ctx.m_local, path_pred_pos, path_pred_vel ) )
         continue;
 
-      if ( !hit_path.empty( ) )
-        continue;
-
       hit_path = bug_path;
 
       edge_dist.push_back(
@@ -324,6 +323,9 @@ void c_movement::edge_bug( ) {
 
       break;
     }
+
+    if ( run_edge_bug || !hit_path.empty( ) )
+      break;
   }
 }
 
