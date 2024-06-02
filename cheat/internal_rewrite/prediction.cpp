@@ -495,17 +495,14 @@ void c_prediction::try_touch_ground( c_base_player* player, const vec3_t& start,
 }
 
 void c_prediction::try_touch_ground_in_quadrants( c_base_player* player, const vec3_t& start, const vec3_t& end, CGameTrace* pm ) {
-	vec3_t mins, maxs;
-
 	vec3_t mins_src = player->m_vecMins( );
 	vec3_t maxs_src = player->m_vecMaxs( );
-
 	float fraction = pm->fraction;
 	vec3_t end_pos = pm->endpos;
+	vec3_t mins, maxs;
 
 	mins = mins_src;
 	maxs = vec3_t( std::min( 0.f, maxs_src.x ), std::min( 0.f, maxs_src.y ), maxs_src.z );
-
 	try_touch_ground( player, start, end, mins, maxs, pm );
 	if( pm->m_pEnt && pm->plane.normal.z >= 0.7 ) {
 		pm->fraction = fraction;
@@ -515,7 +512,6 @@ void c_prediction::try_touch_ground_in_quadrants( c_base_player* player, const v
 
 	mins = vec3_t( std::max( 0.f, mins_src.x ), std::max( 0.f, mins_src.y ), mins_src.z );
 	maxs = maxs_src;
-
 	try_touch_ground( player, start, end, mins, maxs, pm );
 	if( pm->m_pEnt && pm->plane.normal.z >= 0.7 ) {
 		pm->fraction = fraction;
@@ -525,7 +521,6 @@ void c_prediction::try_touch_ground_in_quadrants( c_base_player* player, const v
 
 	mins = vec3_t( mins_src.x, std::max( 0.f, mins_src.y ), mins_src.z );
 	maxs = vec3_t( std::min( 0.f, maxs_src.x ), maxs_src.y, maxs_src.z );
-
 	try_touch_ground( player, start, end, mins, maxs, pm );
 	if( pm->m_pEnt && pm->plane.normal.z >= 0.7 ) {
 		pm->fraction = fraction;
@@ -535,7 +530,6 @@ void c_prediction::try_touch_ground_in_quadrants( c_base_player* player, const v
 
 	mins = vec3_t( std::max( 0.f, mins_src.x ), mins_src.y, mins_src.z );
 	maxs = vec3_t( maxs_src.x, std::min( 0.f, maxs_src.y ), maxs_src.z );
-
 	try_touch_ground( player, start, end, mins, maxs, pm );
 	if( pm->m_pEnt && pm->plane.normal.z >= 0.7 ) {
 		pm->fraction = fraction;

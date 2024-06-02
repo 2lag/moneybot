@@ -734,12 +734,20 @@ namespace ui
 
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "air duck" ), &g_settings.misc.air_duck ) );
 
-						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge jump" ), &g_settings.misc.edge_jump( ) ) )->add_item(
+						/*movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge jump" ), &g_settings.misc.edge_jump( ) ) )->add_item(
 							std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.edge_jump_key( ), xors( "edge_jump_key" ) )
 						);
             movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge bug" ), &g_settings.misc.edge_bug( ) ) )->add_item(
               std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.edge_bug_key( ), xors( "edge_bug_key" ) )
+            );*/
+
+            movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "jump bug" ), &g_settings.misc.jump_bug( ) ) )->add_item(
+              std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.jump_bug_key( ), xors( "jump_bug_key" ) )
             );
+            movement_form->add_item(
+              std::make_shared< ui::c_dropdown< > >( 0, 0, 120, xors( "jump bug type" ), &g_settings.misc.jump_bug_type, &dropdowns::jump_bug_types )
+            )->set_cond( [ ]( ) { return g_settings.misc.jump_bug( ); } );
+
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "show jump stats" ), &g_settings.misc.show_jump_stats ) );
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "fake duck" ), &g_settings.misc.fake_duck( ) ) )->add_item(
 							std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.fake_duck_key( ), xors( "fake_duck_key" ) )

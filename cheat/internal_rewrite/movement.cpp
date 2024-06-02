@@ -127,7 +127,7 @@ void c_movement::edge_jump( ) {
 		m_ucmd->m_buttons |= IN_JUMP;
 	}
 }
-
+/*
 std::vector<float> edge_dist;
 
 template <typename t>
@@ -161,13 +161,15 @@ void find_max_strafe_angle( vec3_t pred_vel, vec3_t pred_pos, float max_speed, f
 
     if ( fabs( ang_delta ) > max_ang ) {
       max_ang = fabs( ang_delta );
-      max_ang *= 3; // 1 = barebones, 2 = perf, 3 = willingly slowdown
+      max_ang *= 2; // 1 = barebones, 2 = perf, 3 = willingly slowdown
     }
   }
 }
 
 bool edge_bug_detect( c_base_player* ent, const vec3_t& _origin, const vec3_t& pred_vel ) {
-  CGameTrace tr;
+  CGameTrace tr1{ };
+  CGameTrace tr2{ };
+  tr2.fraction = 1.f;
 
   vec3_t vel = pred_vel;
   vec3_t min = ent->m_vecMins( );
@@ -178,19 +180,23 @@ bool edge_bug_detect( c_base_player* ent, const vec3_t& _origin, const vec3_t& p
     origin.y,
     origin.z - 2.f
   };
-  g_cheat.m_prediction.try_touch_ground( ent, origin, end, min, max, &tr );
+  g_cheat.m_prediction.try_touch_ground( ent, origin, end, min, max, &tr1 );
   
-  if ( tr.DidHit( ) )
+  if ( tr1.DidHit( ) )
     vel.z = 0;
   else
     return false;
 
-  origin += vel;
-  end += vel;
-  g_cheat.m_prediction.try_touch_ground_in_quadrants( ent, origin, end, &tr );
+  origin += ( vel * TICK_INTERVAL( ) );
+  end += ( vel * TICK_INTERVAL( ) );
+  g_cheat.m_prediction.try_touch_ground_in_quadrants( ent, origin, end, &tr2 );
   
-  if ( !tr.DidHit( ) )
+  if ( tr2.endpos.z > tr1.endpos.z )
+    return false;
+
+  if ( !tr2.DidHit( ) )
     return true; // buggin
+
   return false; // ground
 }
 
@@ -200,6 +206,8 @@ vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, b
 
   auto& min = ent->m_vecMins( );
   auto& max = ent->m_vecMaxs( );
+
+  velocity -= sv_gravity->get_float( ) * 0.5f * TICK_INTERVAL( );
 
   auto& start = origin;
   auto end = start + velocity * TICK_INTERVAL( );
@@ -228,6 +236,8 @@ vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, b
     }
   }
   
+  vec3_t tr_end = tr.endpos;
+
   end = tr.endpos;
   end.z -= 2.f;
 
@@ -237,12 +247,13 @@ vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, b
   if ( tr.fraction != 1.f && tr.plane.normal.z > 0.7f )
     stop_calc = true;
   else
-    velocity.z -= sv_gravity->get_float( ) * TICK_INTERVAL( );
+    velocity.z -= sv_gravity->get_float( ) * 0.5f * TICK_INTERVAL( );
 
-  return tr.endpos;
+  return tr_end;
 }
 
 int eb_count;
+// https://wiki.sourceruns.org/wiki/Edgebug
 void c_movement::edge_bug( ) {
   if( !g_settings.misc.edge_bug )
     return;
@@ -313,8 +324,11 @@ void c_movement::edge_bug( ) {
       if ( !edge_bug_detect( g_ctx.m_local, path_pred_pos, path_pred_vel ) )
         continue;
 
+      printf( "eb : %d\r", ++eb_count );
+
       hit_path = bug_path;
 
+      // wrong, depend on trace
       edge_dist.push_back(
         ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
       );
@@ -330,7 +344,7 @@ void c_movement::edge_bug( ) {
 }
 
 void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
-  float yaw = g_csgo.m_engine( )->GetViewAngles( );
+  float yaw = g_csgo.m_engine( )->GetViewAngles( ).y;
   vec3_t vel = g_ctx.m_local->m_vecVelocity( );
   float speed = vel.length2d( );
   vec3_t move_dir = target_dir;
@@ -339,7 +353,11 @@ void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
   float target_yaw = math::vector_angles( vec3_t( ), move_dir ).y;
   float delta_yaw = remainderf( target_yaw - yaw, 360.f );
 
-  cmd->m_sidemove = delta_yaw > 0 ? 450.f : -450.f; // need this ?
+  if ( fabs( delta_yaw ) < 1.f )
+    cmd->m_sidemove = 0;
+  else
+    cmd->m_sidemove = delta_yaw > 0 ? 450.f : -450.f;
+
   rotate_movement( cmd, delta_yaw );
 }
 
@@ -370,8 +388,73 @@ void c_movement::perform_edge_bug( ) {
   strafe_to_edge( m_ucmd, hit_path.front( ).second );
   hit_path.erase( hit_path.begin( ) );
 
-  if ( !edge_dist.empty( ) && edge_dist.back( ) < 4.f && hit_path.size( ) < 2 )
+  if ( !edge_dist.empty( ) && edge_dist.back( ) < 4.f && hit_path.size( ) < 2 ) // < 1 ?
     m_ucmd->m_buttons |= IN_DUCK;
+}
+*/
+void c_movement::jump_bug( ) {
+  static const float jb_dist = 4.0f;
+ 
+  if( !g_settings.misc.jump_bug )
+    return;
+ 
+  if ( !g_input.is_key_pressed( ( VirtualKeys_t )g_settings.misc.jump_bug_key( ) ) )
+    return;
+ 
+  if ( !g_ctx.m_local->is_alive( ) )
+    return;
+ 
+  if ( g_ctx.m_local->m_nMoveType( ) == MOVETYPE_LADDER )
+    return;
+ 
+  if ( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND ) {
+    m_ucmd->m_buttons |= IN_JUMP;
+    return;
+  }
+ 
+  vec3_t origin = g_ctx.m_local->m_vecOrigin( );
+  vec3_t vel = g_ctx.m_local->m_vecVelocity( );
+  vec3_t end = origin + vel * TICK_INTERVAL( );
+  end.z -= jb_dist;
+ 
+  CGameTrace tr;
+
+  g_cheat.m_prediction.try_touch_ground_in_quadrants(
+    g_ctx.m_local, origin, end, &tr
+  );
+ 
+  bool trace_hit_ground = tr.m_pEnt;
+ 
+  printf( "did hit: %d\t\t\r", trace_hit_ground ? 1 : 0 );
+ 
+  if ( trace_hit_ground ) {
+    m_ucmd->m_buttons &= IN_DUCK;
+    m_ucmd->m_buttons |= IN_JUMP;
+    return;
+  }
+ 
+  // if trace distance is _ > 4 duck otherwise jump
+  if ( g_settings.misc.jump_bug_type == 1 ) {
+    if ( !trace_hit_ground ) {
+      m_ucmd->m_buttons |= IN_DUCK;
+      return;
+    }
+  } // if next tick's trace dist _ < 4
+  else if ( g_settings.misc.jump_bug_type == 0 ) {
+    end.z += jb_dist;
+    origin = end;
+    end += vel * TICK_INTERVAL( ) * 1.1f;
+    end.z -= jb_dist;
+ 
+    CGameTrace next_tr;
+ 
+    g_cheat.m_prediction.try_touch_ground_in_quadrants(
+      g_ctx.m_local, origin, end, &next_tr
+    );
+ 
+    if ( next_tr.m_pEnt )
+      m_ucmd->m_buttons |= IN_DUCK;
+  }
 }
 
 void c_movement::air_duck( ) {

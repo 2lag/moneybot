@@ -14,6 +14,7 @@ class c_movement {
 	void bhop( );
 	void auto_strafer( );
 
+  void jump_bug( );
   void edge_bug( );
   void perform_edge_bug( );
 
@@ -34,8 +35,9 @@ public:
 
 	void operator()( user_cmd_t* ucmd ) {
 		m_ucmd = ucmd;
-    edge_bug( );
-    perform_edge_bug( );
+    //edge_bug( );
+    //perform_edge_bug( );
+    jump_bug( );
 		auto_strafer( );
 		circle_strafe( );
 		fast_walk( );
