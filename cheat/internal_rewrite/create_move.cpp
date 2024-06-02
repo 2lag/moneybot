@@ -77,6 +77,7 @@ void __fastcall hooks::hl_create_move( void* ecx, void* edx, int a1, float a2, b
 
 		g_cheat.m_legitbot.m_lagcomp( ucmd );
 		g_cheat.m_legitbot.triggerbot( ucmd );
+    g_cheat.m_legitbot.auto_pistol( ucmd );
 
 	  g_cheat.m_lagmgr( send_packet );
 		g_cheat.m_lagmgr( ucmd );

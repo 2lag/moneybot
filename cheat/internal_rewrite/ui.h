@@ -40,9 +40,7 @@ namespace ui
 #ifndef _DEBUG
 			date_str = std::string( g_header.username ) + ( g_header.days_left == 9999 ? " | lifetime" : ( " | days left: " + std::to_string( g_header.days_left ) ) );
 
-			menu = std::make_shared< ui::c_menu >( 10, 10, 580, 470, xors( "moneybot.cc" ),
-				//don't ask
-				date_str.c_str( ) );
+			menu = std::make_shared< ui::c_menu >( 10, 10, 580, 470, xors( "moneybot.cc" ), date_str.c_str( ) );
 #else
       #define day "hi"
 #ifdef day
@@ -55,7 +53,6 @@ namespace ui
 
 			auto tab_sheet = std::make_shared< ui::c_tab_manager >( );
 
-			//todo: replace with icons?
 			auto tab_legit = std::make_shared< ui::c_tab_sheet >( xors( "legit" ), &icons::sprite_legit ); {
 				auto subtab_sheet = std::make_shared< ui::c_subtab_manager >( );
 
@@ -75,6 +72,7 @@ namespace ui
 						main_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "aim assist" ), &g_settings.legit.assist ) );
 						main_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "while flashed" ), &g_settings.legit.while_flashed ) );
 						main_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "through smoke" ), &g_settings.legit.through_smoke ) );
+            main_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "auto pistol" ), &g_settings.legit.auto_pistol ) );
 
 						main_form->add_item( activation_dropdown );
 					}

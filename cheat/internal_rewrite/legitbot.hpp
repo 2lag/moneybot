@@ -13,8 +13,9 @@ namespace features
 		}
 
 		//call once per tick
-		void	sample_angle_data( const vec3_t& angle );
-		void	triggerbot( user_cmd_t* cmd );
+		void sample_angle_data( const vec3_t& angle );
+		void triggerbot( user_cmd_t* cmd );
+    void auto_pistol( user_cmd_t* cmd );
 	private:
 		struct aim_record_t {
 			vec3_t m_viewangles;

@@ -170,6 +170,7 @@ namespace data
 			con_var< bool > friendlies{ &holder_, fnv( "legit_friendlies" ), false };
 			con_var< bool > while_flashed{ &holder_, fnv( "legit_while_flashed" ), false };
 			con_var< bool > through_smoke{ &holder_, fnv( "legit_through_smoke" ), false };
+      con_var< bool > auto_pistol{ &holder_, fnv( "legit_auto_pistol" ), false };
 			con_var< int > activation_type{ &holder_, fnv( "legit_activation_type" ), 1 };
 			con_var< int > key{ &holder_, fnv( "legit_key" ), 0 };
 			con_var< bool > backtracking{ &holder_, fnv( "legit_backtracking" ), 0 };

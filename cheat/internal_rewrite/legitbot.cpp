@@ -502,4 +502,44 @@ namespace features
 			m_curtime = 0;
 		}
 	}
+
+  float get_server_time( user_cmd_t* cmd ) {
+    static user_cmd_t* last_ucmd;
+    static int tick;
+
+    if ( cmd ) {
+      if ( g_ctx.m_local && ( !last_ucmd || last_ucmd->m_predicted ) )
+        tick = g_ctx.m_local->m_nTickBase( );
+      else
+        tick++;
+      last_ucmd = cmd;
+    }
+
+    return tick * TICK_INTERVAL( );
+  }
+
+  void c_legitbot::auto_pistol( user_cmd_t* cmd ) {
+
+    if ( !g_settings.legit.auto_pistol )
+      return;
+
+    if ( !g_ctx.m_local->is_alive( ) )
+      return;
+
+    const auto weapon = g_ctx.m_local->get_weapon( );
+
+    if ( !weapon )
+      return;
+
+    if ( !weapon->is_pistol( ) )
+      return;
+
+    if ( weapon->m_flNextPrimaryAttack( ) <= get_server_time( cmd ) )
+      return;
+
+    if ( weapon->m_iItemDefinitionIndex(  ) == WEAPON_REVOLVER )
+      cmd->m_buttons &= ~IN_ATTACK2;
+    else
+      cmd->m_buttons &= ~IN_ATTACK;
+  }
 }
