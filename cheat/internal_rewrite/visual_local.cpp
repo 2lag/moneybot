@@ -247,7 +247,7 @@ namespace features
   
   void c_visuals::draw_edge_bug( ) {
     #ifdef _DEBUG
-    if ( !g_settings.misc.edge_bug )
+    /*if ( !g_settings.misc.edge_bug )
       return;
 
     clr_t line_col = clr_t( 128, 0, 0 ),
@@ -276,7 +276,7 @@ namespace features
 
         draw_filled_rect( end_w2s.x - 3, end_w2s.y - 3, 6, 6, box_col );
       }
-    }
+    }*/
     #endif
   }
 

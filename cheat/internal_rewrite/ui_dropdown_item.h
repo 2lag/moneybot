@@ -94,8 +94,9 @@ namespace ui
 		};
 
     static std::vector< dropdown_item_t< > > jump_bug_types = {
-      { xors( "next tick" ), 0 },
-      { xors( "hold" ), 1 }
+      { xors( "off" ), 0 },
+      { xors( "next tick" ), 1 },
+      { xors( "hold" ), 2 }
     };
 
 		static std::vector< dropdown_item_t< > > antiaim_edge_type = {

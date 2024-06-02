@@ -127,6 +127,7 @@ void c_movement::edge_jump( ) {
 		m_ucmd->m_buttons |= IN_JUMP;
 	}
 }
+
 /*
 std::vector<float> edge_dist;
 
@@ -392,55 +393,73 @@ void c_movement::perform_edge_bug( ) {
     m_ucmd->m_buttons |= IN_DUCK;
 }
 */
+
 void c_movement::jump_bug( ) {
-  static const float jb_dist = 4.0f;
- 
-  if( !g_settings.misc.jump_bug )
-    return;
- 
+  static const float jb_dist = .1f;
+  static bool in_jump_last_tick = false;
+  static bool on_grnd_last_tick = false;
+  #define early_return { \
+    in_jump_last_tick = false; \
+    on_grnd_last_tick = false; \
+    return; \
+  }
+
+  if ( !g_settings.misc.jump_bug_type )
+    early_return;
+
   if ( !g_input.is_key_pressed( ( VirtualKeys_t )g_settings.misc.jump_bug_key( ) ) )
-    return;
+    early_return;
  
   if ( !g_ctx.m_local->is_alive( ) )
-    return;
+    early_return;
  
   if ( g_ctx.m_local->m_nMoveType( ) == MOVETYPE_LADDER )
-    return;
+    early_return;
  
   if ( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND ) {
-    m_ucmd->m_buttons |= IN_JUMP;
+    if ( !in_jump_last_tick ) {
+      m_ucmd->m_buttons |= IN_JUMP;
+      in_jump_last_tick = true;
+    } else
+      in_jump_last_tick = false;
+    on_grnd_last_tick = true;
     return;
   }
  
+  if ( on_grnd_last_tick ) {
+    m_ucmd->m_buttons &= ~IN_JUMP;
+    on_grnd_last_tick = false;
+  }
+
   vec3_t origin = g_ctx.m_local->m_vecOrigin( );
   vec3_t vel = g_ctx.m_local->m_vecVelocity( );
-  vec3_t end = origin + vel * TICK_INTERVAL( );
+  vec3_t min = g_ctx.m_local->m_vecMins( );
+  vec3_t max = g_ctx.m_local->m_vecMaxs( );
+  vec3_t end = origin;
   end.z -= jb_dist;
  
   CGameTrace tr;
 
-  g_cheat.m_prediction.try_touch_ground_in_quadrants(
-    g_ctx.m_local, origin, end, &tr
+  g_cheat.m_prediction.try_touch_ground(
+    g_ctx.m_local, origin, end, min, max, &tr
   );
- 
-  bool trace_hit_ground = tr.m_pEnt;
- 
-  printf( "did hit: %d\t\t\r", trace_hit_ground ? 1 : 0 );
- 
+  bool trace_hit_ground = tr.startpos.z - tr.endpos.z < FLT_EPSILON;
+
   if ( trace_hit_ground ) {
-    m_ucmd->m_buttons &= IN_DUCK;
-    m_ucmd->m_buttons |= IN_JUMP;
+    m_ucmd->m_buttons &= ~IN_DUCK;
+    if ( !in_jump_last_tick ) {
+      m_ucmd->m_buttons |= IN_JUMP;
+      in_jump_last_tick = true;
+    }
     return;
   }
  
   // if trace distance is _ > 4 duck otherwise jump
-  if ( g_settings.misc.jump_bug_type == 1 ) {
-    if ( !trace_hit_ground ) {
+  if ( g_settings.misc.jump_bug_type == 2 ) {
+    if ( !trace_hit_ground )
       m_ucmd->m_buttons |= IN_DUCK;
-      return;
-    }
   } // if next tick's trace dist _ < 4
-  else if ( g_settings.misc.jump_bug_type == 0 ) {
+  else if ( g_settings.misc.jump_bug_type == 1 ) {
     end.z += jb_dist;
     origin = end;
     end += vel * TICK_INTERVAL( ) * 1.1f;
@@ -455,6 +474,9 @@ void c_movement::jump_bug( ) {
     if ( next_tr.m_pEnt )
       m_ucmd->m_buttons |= IN_DUCK;
   }
+
+  early_return;
+  #undef early_return
 }
 
 void c_movement::air_duck( ) {

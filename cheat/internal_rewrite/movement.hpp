@@ -37,11 +37,11 @@ public:
 		m_ucmd = ucmd;
     //edge_bug( );
     //perform_edge_bug( );
-    jump_bug( );
 		auto_strafer( );
 		circle_strafe( );
 		fast_walk( );
 		bhop( );
+    jump_bug( );
 		edge_jump( );
 		jump_stats( );
 		air_duck( );
