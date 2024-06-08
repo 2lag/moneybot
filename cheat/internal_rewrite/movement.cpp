@@ -396,40 +396,41 @@ void c_movement::perform_edge_bug( ) {
 
 void c_movement::jump_bug( ) {
   static const float jb_dist = .1f;
-  static bool in_jump_last_tick = false;
-  static bool on_grnd_last_tick = false;
-  #define early_return { \
-    in_jump_last_tick = false; \
-    on_grnd_last_tick = false; \
-    return; \
-  }
+  static bool was_jump = false;
 
   if ( !g_settings.misc.jump_bug_type )
-    early_return;
+    return;
 
   if ( !g_input.is_key_pressed( ( VirtualKeys_t )g_settings.misc.jump_bug_key( ) ) )
-    early_return;
+    return;
  
-  if ( !g_ctx.m_local->is_alive( ) )
-    early_return;
+  if( !g_ctx.m_local->is_alive( ) )
+    return;
  
   if ( g_ctx.m_local->m_nMoveType( ) == MOVETYPE_LADDER )
-    early_return;
+    return;
+
+  m_ucmd->m_buttons &= ~IN_JUMP;
  
+
   if ( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND ) {
-    if ( !in_jump_last_tick ) {
+    if( !was_jump )
       m_ucmd->m_buttons |= IN_JUMP;
-      in_jump_last_tick = true;
-    } else
-      in_jump_last_tick = false;
-    on_grnd_last_tick = true;
+    was_jump = m_ucmd->m_buttons & IN_JUMP;
     return;
   }
- 
-  if ( on_grnd_last_tick ) {
-    m_ucmd->m_buttons &= ~IN_JUMP;
-    on_grnd_last_tick = false;
-  }
+
+  was_jump = false;
+
+  vec3_t prevstart = g_ctx.m_last_origin;
+  vec3_t prevend = prevstart;
+  prevend.z -= 3.9f;
+
+  CGameTrace prev_tr{};
+
+  g_cheat.m_prediction.try_touch_ground_in_quadrants(
+    g_ctx.m_local, prevstart, prevend, &prev_tr
+  );
 
   vec3_t origin = g_ctx.m_local->m_vecOrigin( );
   vec3_t vel = g_ctx.m_local->m_vecVelocity( );
@@ -445,14 +446,12 @@ void c_movement::jump_bug( ) {
   );
   bool trace_hit_ground = tr.startpos.z - tr.endpos.z < FLT_EPSILON;
 
-  if ( trace_hit_ground ) {
+  if ( trace_hit_ground && prev_tr.m_pEnt ) {
     m_ucmd->m_buttons &= ~IN_DUCK;
-    if ( !in_jump_last_tick ) {
-      m_ucmd->m_buttons |= IN_JUMP;
-      in_jump_last_tick = true;
-    }
+    m_ucmd->m_buttons |= IN_JUMP;
     return;
   }
+
  
   // if trace distance is _ > 4 duck otherwise jump
   if ( g_settings.misc.jump_bug_type == 2 ) {
@@ -474,9 +473,6 @@ void c_movement::jump_bug( ) {
     if ( next_tr.m_pEnt )
       m_ucmd->m_buttons |= IN_DUCK;
   }
-
-  early_return;
-  #undef early_return
 }
 
 void c_movement::air_duck( ) {
