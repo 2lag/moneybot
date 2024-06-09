@@ -84,7 +84,7 @@ void __fastcall hooks::hl_create_move( void* ecx, void* edx, int a1, float a2, b
 
 		g_cheat.m_visuals.update_hit_flags( );
 		g_cheat.m_extra.fake_duck( ucmd );
-		//g_cheat.m_ragebot( ucmd );
+		g_cheat.m_ragebot( ucmd );
 
 		g_cheat.m_extra.no_recoil( ucmd );
 
