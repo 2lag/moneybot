@@ -407,8 +407,10 @@ namespace data
 			con_var< int > edge_jump_key{ &holder_, fnv( "misc_edge_jump_key" ), false };
       con_var< int > jump_bug_type{ &holder_, fnv( "misc_jump_bug_type" ), 0 };
 			con_var< int > jump_bug_key{ &holder_, fnv( "misc_jump_bug_key" ), false };
-      /*con_var< bool > edge_bug{ &holder_, fnv( "misc_edge_bug_key" ), false };
-			con_var< int > edge_bug_key{ &holder_, fnv( "misc_edge_bug_key" ), false };*/
+      con_var< bool > pixel_surf{ &holder_, fnv( "misc_pixel_surf" ), false };
+			con_var< int > pixel_surf_key{ &holder_, fnv( "misc_pixel_surf_key" ), false };
+      //con_var< bool > edge_bug{ &holder_, fnv( "misc_edge_bug_key" ), false };
+			//con_var< int > edge_bug_key{ &holder_, fnv( "misc_edge_bug_key" ), false };
 			con_var< bool > show_jump_stats{ &holder_, fnv( "misc_show_jump_stats" ), 0 };
 			con_var< int > viewmodel_fov{ &holder_, fnv( "misc_viewmodel_fov" ), 0 };
 			con_var< int > fov_changer{ &holder_, fnv( "fov_changer" ), 90 };

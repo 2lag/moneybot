@@ -83,7 +83,7 @@ public:
 
 	void frame_stage_notify( );
 	vec3_t aimware_extrapolate( c_base_player* ent, vec3_t origin, vec3_t& velocity );
-	void predict_player( c_base_player* player );
+	//void predict_player( c_base_player* player );
 	int	 get_predicted_choke( int );	
 	vec3_t extrapolate_player( c_base_player*, int );
 	void trace_player_bbox( c_base_player*, const vec3_t& start, const vec3_t& end, CGameTrace* pm );

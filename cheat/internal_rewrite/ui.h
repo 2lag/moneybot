@@ -729,18 +729,24 @@ namespace ui
 						circle_box->add_item( std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.circle_strafe_key, xors( "circle_strafe_key" ) ) );
 						circle_box->set_cond( [ ]( ) { return g_settings.misc.bunny_hop && g_settings.misc.auto_strafe; } );
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "no duck cooldown" ), &g_settings.misc.no_crouch_cooldown ) );
-
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "air duck" ), &g_settings.misc.air_duck ) );
 
-						/*movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge jump" ), &g_settings.misc.edge_jump( ) ) )->add_item(
+						/*
+            movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge jump" ), &g_settings.misc.edge_jump( ) ) )->add_item(
 							std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.edge_jump_key( ), xors( "edge_jump_key" ) )
 						);
             movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "edge bug" ), &g_settings.misc.edge_bug( ) ) )->add_item(
               std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.edge_bug_key( ), xors( "edge_bug_key" ) )
-            );*/
+            );
+            */
 
             movement_form->add_item( std::make_shared< ui::c_dropdown< > >( 0, 0, 120, xors( "jump bug" ), &g_settings.misc.jump_bug_type, &dropdowns::jump_bug_types ) )->add_item(
               std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.jump_bug_key( ), xors( "jump_bug_key" ) )
+            );
+
+            
+						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "pixelsurf" ), &g_settings.misc.pixel_surf ) )->add_item(
+              std::make_shared< ui::c_key_picker_small >( 195, 1, &g_settings.misc.pixel_surf_key( ), xors( "pixel_surf_key" ) )
             );
 
 						movement_form->add_item( std::make_shared< ui::c_checkbox >( 0, 0, xors( "show jump stats" ), &g_settings.misc.show_jump_stats ) );

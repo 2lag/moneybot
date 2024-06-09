@@ -15,8 +15,11 @@ class c_movement {
 	void auto_strafer( );
 
   void jump_bug( );
+
   void edge_bug( );
   void perform_edge_bug( );
+
+  void pixel_surf( );
 
 	void edge_jump( );
 	void jump_stats( );
@@ -37,6 +40,7 @@ public:
 		m_ucmd = ucmd;
     //edge_bug( );
     //perform_edge_bug( );
+    pixel_surf( );
 		auto_strafer( );
 		circle_strafe( );
 		fast_walk( );
