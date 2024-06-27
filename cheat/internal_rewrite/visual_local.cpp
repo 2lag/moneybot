@@ -244,40 +244,212 @@ namespace features
 
 		draw_autowall( );
 	}
-  
+
+
   void c_visuals::draw_edge_bug( ) {
-    #ifdef _DEBUG
-    /*if ( !g_settings.misc.edge_bug )
+		// leaving this in just so u can see the amt of shit i log.
+
+    /*if( !g_settings.misc.edge_bug )
       return;
 
-    clr_t line_col = clr_t( 128, 0, 0 ),
-          box_col = g_settings.menu.menu_color;
 
-    if ( !g_cheat.m_movement.bug_path.empty( ) ) {
-      for ( const auto& segment : g_cheat.m_movement.bug_path ) {
-        vec2_t start_w2s = util::screen_transform( segment.first );
-        vec2_t end_w2s = util::screen_transform( segment.second );
 
-        draw_line( start_w2s, end_w2s, line_col );
+    for( auto p : g_cheat.m_movement.paths ) {
+			//if( !p.found )
+			//	continue;
 
-        draw_filled_rect( end_w2s.x - 3, end_w2s.y - 3, 6, 6, box_col );
+			clr_t line_col = clr_t( 128, 0, 0 ),
+						box_col = g_settings.menu.menu_color;
+
+			clr_t bounding_col = clr_t( 255, 255, 0 );
+			vec3_t bounding_origin = p.edge;
+      if( p.found ) {
+				vec3_t mins = g_ctx.m_local->m_vecMins();
+				vec3_t maxs = g_ctx.m_local->m_vecMaxs();
+
+				std::vector<vec3_t> points = {
+					vec3_t(mins.x, mins.y, mins.z),
+					vec3_t(mins.x, maxs.y, mins.z),
+					vec3_t(maxs.x, maxs.y, mins.z),
+					vec3_t(maxs.x, mins.y, mins.z),
+					vec3_t(mins.x, mins.y, maxs.z),
+					vec3_t(mins.x, maxs.y, maxs.z),
+					vec3_t(maxs.x, maxs.y, maxs.z),
+					vec3_t(maxs.x, mins.y, maxs.z)
+				};
+
+				for (auto &point : points) {
+					point += bounding_origin;
+					point = util::screen_transform(point);
+				}
+
+				auto draw_line_wrap = [&](int i, int j) {
+					draw_line(points[i].x, points[i].y, points[j].x, points[j].y, bounding_col);
+				};
+
+				draw_line_wrap(0, 1);
+				draw_line_wrap(1, 2);
+				draw_line_wrap(2, 3);
+				draw_line_wrap(3, 0);
+				draw_line_wrap(4, 5);
+				draw_line_wrap(5, 6);
+				draw_line_wrap(6, 7);
+				draw_line_wrap(7, 4);
+				draw_line_wrap(0, 4);
+				draw_line_wrap(1, 5);
+				draw_line_wrap(2, 6);
+				draw_line_wrap(3, 7);
       }
+	  
+			if( p.path.size() < 2 )
+				return;
+
+			auto& first = p.path.at( 0 );
+			vec3_t lastorigin = first.origin;
+			vec3_t lastang = first.angle;
+			vec2_t lastmove = first.move;
+
+			for( int i = 1; i < p.path.size(); ++i ) {
+				auto& it = p.path.at( i );
+	    
+				vec3_t cur = it.origin;
+				vec2_t prev_w2s = util::screen_transform( lastorigin );
+				vec2_t cur_w2s = util::screen_transform( cur );
+
+				draw_line( prev_w2s, cur_w2s, line_col );
+				draw_filled_rect( prev_w2s.x - 5, prev_w2s.y - 5, 10, 10, box_col );
+	    
+				lastorigin = cur;
+				lastang = it.angle;
+				lastmove = it.move;
+			}
     }
 
-    if ( !g_cheat.m_movement.hit_path.empty( ) ) {
-      box_col = clr_t( 105, 231, 105 ); 
-      line_col = clr_t( 0, 128, 0 );
+		auto p = g_cheat.m_movement.m_full_eb_path;
+		if( p.path.size( ) > 0 ) {
+			clr_t line_col = clr_t( 0, 0, 128 ),
+				box_col = clr_t( 0, 0, 255 );
 
-      for ( const auto& segment : g_cheat.m_movement.hit_path ) {
-        vec2_t start_w2s = util::screen_transform( segment.first );
-        vec2_t end_w2s = util::screen_transform( segment.second );
+			clr_t bounding_col = clr_t( 255, 0, 255 );
+			vec3_t bounding_origin = p.edge;
+			if( p.found ) {
+				vec3_t mins = g_ctx.m_local->m_vecMins( );
+				vec3_t maxs = g_ctx.m_local->m_vecMaxs( );
 
-        draw_line( start_w2s, end_w2s, line_col );
+				std::vector<vec3_t> points = {
+					vec3_t( mins.x, mins.y, mins.z ),
+					vec3_t( mins.x, maxs.y, mins.z ),
+					vec3_t( maxs.x, maxs.y, mins.z ),
+					vec3_t( maxs.x, mins.y, mins.z ),
+					vec3_t( mins.x, mins.y, maxs.z ),
+					vec3_t( mins.x, maxs.y, maxs.z ),
+					vec3_t( maxs.x, maxs.y, maxs.z ),
+					vec3_t( maxs.x, mins.y, maxs.z )
+				};
 
-        draw_filled_rect( end_w2s.x - 3, end_w2s.y - 3, 6, 6, box_col );
-      }
-    }*/
-    #endif
+				for( auto& point : points ) {
+					point += bounding_origin;
+					point = util::screen_transform( point );
+				}
+
+				auto draw_line_wrap = [&]( int i, int j ) {
+					draw_line( points[ i ].x, points[ i ].y, points[ j ].x, points[ j ].y, bounding_col );
+				};
+
+				draw_line_wrap( 0, 1 );
+				draw_line_wrap( 1, 2 );
+				draw_line_wrap( 2, 3 );
+				draw_line_wrap( 3, 0 );
+				draw_line_wrap( 4, 5 );
+				draw_line_wrap( 5, 6 );
+				draw_line_wrap( 6, 7 );
+				draw_line_wrap( 7, 4 );
+				draw_line_wrap( 0, 4 );
+				draw_line_wrap( 1, 5 );
+				draw_line_wrap( 2, 6 );
+				draw_line_wrap( 3, 7 );
+			}
+
+			if( p.path.size( ) < 2 )
+				return;
+
+			auto& first = p.path.at( 0 );
+			vec3_t lastorigin = first.origin;
+			vec3_t lastang = first.angle;
+			vec2_t lastmove = first.move;
+
+			for( int i = 1; i < p.path.size( ); ++i ) {
+				auto& it = p.path.at( i );
+
+				vec3_t cur = it.origin;
+				vec2_t prev_w2s = util::screen_transform( lastorigin );
+				vec2_t cur_w2s = util::screen_transform( cur );
+
+				draw_line( prev_w2s, cur_w2s, line_col );
+				draw_filled_rect( prev_w2s.x - 5, prev_w2s.y - 5, 10, 10, box_col );
+
+				lastorigin = cur;
+				lastang = it.angle;
+				lastmove = it.move;
+			}
+		}
+
+		vec3_t eb_impact = g_cheat.m_movement.m_eb_impact;
+		vec3_t mins = g_ctx.m_local->m_vecMins( );
+		vec3_t maxs = g_ctx.m_local->m_vecMaxs( );
+
+		std::vector<vec3_t> points = {
+			vec3_t( mins.x, mins.y, mins.z ),
+			vec3_t( mins.x, maxs.y, mins.z ),
+			vec3_t( maxs.x, maxs.y, mins.z ),
+			vec3_t( maxs.x, mins.y, mins.z ),
+			vec3_t( mins.x, mins.y, maxs.z ),
+			vec3_t( mins.x, maxs.y, maxs.z ),
+			vec3_t( maxs.x, maxs.y, maxs.z ),
+			vec3_t( maxs.x, mins.y, maxs.z )
+		};
+
+		for( auto& point : points ) {
+			point += eb_impact;
+			point = util::screen_transform( point );
+		}
+
+		auto draw_line_wrap = [&]( int i, int j ) {
+			draw_line( points[ i ].x, points[ i ].y, points[ j ].x, points[ j ].y, clr_t( 0, 255, 0 ) );
+		};
+
+		draw_line_wrap( 0, 1 );
+		draw_line_wrap( 1, 2 );
+		draw_line_wrap( 2, 3 );
+		draw_line_wrap( 3, 0 );
+		draw_line_wrap( 4, 5 );
+		draw_line_wrap( 5, 6 );
+		draw_line_wrap( 6, 7 );
+		draw_line_wrap( 7, 4 );
+		draw_line_wrap( 0, 4 );
+		draw_line_wrap( 1, 5 );
+		draw_line_wrap( 2, 6 );
+		draw_line_wrap( 3, 7 );
+	
+		auto taken = g_cheat.m_movement.taken_path;
+		if( taken.size( ) > 1 ) {
+			vec3_t lastorigin = taken.at( 0 );
+
+
+			for( int i = 1; i < taken.size( ); ++i ) {
+				auto& it = taken.at( i );
+
+				vec3_t cur = it;
+				vec2_t prev_w2s = util::screen_transform( lastorigin );
+				vec2_t cur_w2s = util::screen_transform( cur );
+
+				draw_line( prev_w2s, cur_w2s, clr_t( 0, 128, 0 ) );
+				draw_filled_rect( prev_w2s.x - 5, prev_w2s.y - 5, 10, 10, clr_t( 0, 255, 0 ) );
+
+				lastorigin = cur;
+			}
+		}
+		*/
   }
 
 	void c_visuals::spectator_list( ) {

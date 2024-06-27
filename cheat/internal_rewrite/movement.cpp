@@ -128,271 +128,317 @@ void c_movement::edge_jump( ) {
 	}
 }
 
-/*
-std::vector<float> edge_dist;
+const float CS_PLAYER_SPEED_RUN = 260.f;
 
-template <typename t>
-void scale_vector( vec3_t& vec, t first_min, t first_max, t second_min, t second_max ) {
-  #define map( i, a, b ) ( second_min + ( ( second_max - second_min ) / ( first_max - first_min ) ) * ( i - first_min ) )
-  vec = {
-    map( vec.x, one, two ),
-    map( vec.y, one, two ),
-    0.f
-  };
+// i had to reverse this
+float gamemovement_maxspeed() {
+  static cvar_t* sv_maxspeed = g_csgo.m_cvar()->FindVar( "sv_maxspeed" );
+  
+  float maxspeed = math::min( sv_maxspeed->get_float(), CS_PLAYER_SPEED_RUN );
+  if( g_ctx.m_local->m_flStamina( ) > 0 ) {
+    float speed_scale = std::clamp( 1.0f - g_ctx.m_local->m_flStamina( ) / 100.f, 0.f, 1.f );
+    speed_scale *= speed_scale;
+    maxspeed *= speed_scale;
+  }
+  return maxspeed;
 }
 
-void find_max_strafe_angle( vec3_t pred_vel, vec3_t pred_pos, float max_speed, float& max_ang ) {
-  for ( int idx = 0; idx <= 180; idx += 1 ) {
-    float rads_off( DEG2RAD( idx ) );
-    vec3_t t_wishdir {
-      cos( rads_off ),
-      sin( rads_off ),
-      0.f
-    };
-    t_wishdir.normalize_vector( );
-    scale_vector< int >( t_wishdir, 0, 1, 0, max_speed );
+// https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/shared/gamemovement.cpp#L1030-L1041
+void clamp_move( vec2_t* move ) {
+  float maxspeed = gamemovement_maxspeed();
+  float speed_sqr = move->lengthsqr();
 
-    vec3_t t_vel = pred_vel;
-    g_cheat.m_prediction.air_accelerate(
-      g_ctx.m_local, pred_pos, t_vel, t_wishdir, max_speed
-    );
-
-    float ang_delta = atan2( t_vel.y, t_vel.x ) - atan2( pred_vel.y, pred_vel.x );
-    float d_speed = ( t_vel - pred_vel ).length2d( );
-
-    if ( fabs( ang_delta ) > max_ang ) {
-      max_ang = fabs( ang_delta );
-      max_ang *= 2; // 1 = barebones, 2 = perf, 3 = willingly slowdown
-    }
+  if( !!speed_sqr && speed_sqr > maxspeed * maxspeed ) {
+    float ratio = maxspeed / sqrt( speed_sqr );
+    move->x *= ratio;
+    move->y *= ratio;
   }
 }
 
-bool edge_bug_detect( c_base_player* ent, const vec3_t& _origin, const vec3_t& pred_vel ) {
-  CGameTrace tr1{ };
-  CGameTrace tr2{ };
-  tr2.fraction = 1.f;
+// https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/shared/gamemovement.cpp#L3774
+void categorize_position( c_movement::pred_data_t* d ) {
+  float zvel = d->velocity.z;
 
-  vec3_t vel = pred_vel;
-  vec3_t min = ent->m_vecMins( );
-  vec3_t max = ent->m_vecMaxs( );
-  vec3_t origin = _origin;
-  vec3_t end = {
-    origin.x,
-    origin.y,
-    origin.z - 2.f
-  };
-  g_cheat.m_prediction.try_touch_ground( ent, origin, end, min, max, &tr1 );
-  
-  if ( tr1.DidHit( ) )
-    vel.z = 0;
-  else
-    return false;
-
-  origin += ( vel * TICK_INTERVAL( ) );
-  end += ( vel * TICK_INTERVAL( ) );
-  g_cheat.m_prediction.try_touch_ground_in_quadrants( ent, origin, end, &tr2 );
-  
-  if ( tr2.endpos.z > tr1.endpos.z )
-    return false;
-
-  if ( !tr2.DidHit( ) )
-    return true; // buggin
-
-  return false; // ground
-}
-
-vec3_t extrapolate_edge( c_base_player* ent, vec3_t& origin, vec3_t& velocity, bool& stop_calc ) {
-  static auto sv_jump_impulse = g_csgo.m_cvar( )->FindVar( xors( "sv_jump_impulse" ) );
-  static auto sv_gravity = g_csgo.m_cvar( )->FindVar( xors( "sv_gravity" ) );
-
-  auto& min = ent->m_vecMins( );
-  auto& max = ent->m_vecMaxs( );
-
-  velocity -= sv_gravity->get_float( ) * 0.5f * TICK_INTERVAL( );
-
-  auto& start = origin;
-  auto end = start + velocity * TICK_INTERVAL( );
-
-  CTraceFilter f;
-  CGameTrace tr;
-  Ray_t ray;
-
-  ray.Init( start, end, min, max );
-  f.pSkip = ent;
-
-  g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &f, &tr );
-
-  if ( tr.fraction != 1.f ) {
-    for ( int idx = 0; idx < 2; ++idx ) {
-      velocity -= tr.plane.normal * velocity.dot( tr.plane.normal );
-      auto dot = velocity.dot( tr.plane.normal );
-      if ( dot < 0.f ) velocity -= dot * tr.plane.normal;
-
-      end = tr.endpos + ( velocity * TICK_INTERVAL( ) * ( 1.f - tr.fraction ) );
-      ray.Init( tr.endpos, end, min, max );
-      g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &f, &tr );
-
-      if ( tr.fraction == 1.f )
-        break;
-    }
+  // surfing up ground
+  if( zvel > 140.f ) {
+    d->onground = false;
+    return;
   }
-  
-  vec3_t tr_end = tr.endpos;
 
-  end = tr.endpos;
+  vec3_t start = d->origin;
+  vec3_t end = start;
   end.z -= 2.f;
+  
+  CGameTrace t;
+  g_cheat.m_prediction.trace_player_bbox( g_ctx.m_local, start, end, &t );
 
-  ray.Init( tr.endpos, end, min, max );
-  g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &f, &tr );
+  if( !t.m_pEnt )
+    return;
 
-  if ( tr.fraction != 1.f && tr.plane.normal.z > 0.7f )
-    stop_calc = true;
-  else
-    velocity.z -= sv_gravity->get_float( ) * 0.5f * TICK_INTERVAL( );
+  if( t.plane.normal < 0.7f ) {
+    g_cheat.m_prediction.try_touch_ground_in_quadrants( g_ctx.m_local, start, end, &t );
+    if( !t.m_pEnt || t.plane.normal < 0.7f ) {
+      return;
+    }
+  }
 
-  return tr_end;
+  d->eb_tick = false;
+  d->onground = true;
 }
 
-int eb_count;
+// https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/shared/gamemovement.cpp#L2560
+void try_player_move( c_movement::pred_data_t* d ) {
+  CGameTrace t;
+  vec3_t end;
+  vec3_t travel;
+  float timeleft = TICK_INTERVAL( );
+  int numbumps = 4;
+
+  for( int b = 0; b < numbumps; ++b ) {
+    travel = d->velocity * timeleft;
+    end = d->origin + travel;
+    g_cheat.m_prediction.trace_player_bbox( g_ctx.m_local, d->origin, end, &t );
+
+    if( t.fraction == 1.f ) {
+      d->origin = t.endpos;
+      return;
+    }
+
+    if( t.fraction < 0.0001f )
+      return;
+
+    if( t.allsolid )
+      return;
+
+    d->origin = t.endpos;
+    timeleft -= timeleft * t.fraction;
+
+    vec3_t new_velocity;
+    g_cheat.m_prediction.clip_velocity( d->velocity, t.plane.normal, new_velocity, 1.f );
+    d->velocity = new_velocity;
+
+    if( t.plane.normal.z > 0.7 ) {
+      d->eb_tick = true;
+      d->eb_frac = t.fraction;
+    }
+    else {
+      d->hit_wall = true;
+      break;
+    }
+  }
+}
+
+// https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/shared/gamemovement.cpp#L1753
+void eb_airmove( c_movement::pred_data_t* d ) {
+  vec3_t forward, right, up;
+  vec3_t wishvel;
+  vec3_t wishdir;
+  float wishspeed;
+  float maxspeed = gamemovement_maxspeed();
+  
+  math::angle_vectors( d->angle, &forward, &right, &up );
+
+  g_cheat.m_prediction.start_gravity( g_ctx.m_local, d->origin, d->velocity );
+  
+  vec2_t move = d->move;
+  clamp_move( &move );
+  float fmove = move.x;
+  float smove = move.y;
+
+  forward.z = right.z = 0;
+  forward.normalize_vector();
+  right.normalize_vector();
+
+  for( int i = 0; i < 2; ++i ) {
+    wishvel[i] = forward[i] * fmove + right[i] * smove;
+  }
+  wishvel[2] = 0;
+
+  wishdir = wishvel;
+  wishspeed = wishdir.length();
+  wishdir.normalize_vector();
+
+  if( wishspeed > 0 && wishspeed > maxspeed ) {
+    wishvel *= ( maxspeed / wishspeed );
+    wishspeed = maxspeed;
+  }
+
+  g_cheat.m_prediction.air_accelerate( g_ctx.m_local, d->origin, d->velocity, wishdir, wishspeed );
+  try_player_move( d );
+  categorize_position( d );
+  g_cheat.m_prediction.finish_gravity( g_ctx.m_local, d->origin, d->velocity );
+}
+
+
+int c_movement::find_edge( pred_data_t* d, float strafe ) {
+  const int EDGE_TICKS_MAX = 64; // also make a setting?
+
+  eb_path p{};
+  
+  p.path.push_back( *d );
+  for( int i = 0; i < EDGE_TICKS_MAX; ++i ) {
+    bool eb = d->eb_tick;
+    eb_airmove( d );
+
+    if( eb ) {
+      p.path.push_back( *d );
+      paths.push_back( p );
+      return 1;
+    }
+
+    ++d->ticks;
+    d->angle.y += strafe;
+    d->angle.clamp( );
+    p.path.push_back( *d );
+    
+    if( d->eb_tick && !eb ) {
+      p.edge = d->origin;
+      p.found = 1;
+    }
+    if( d->onground || d->hit_wall )
+      break;
+  }
+
+  paths.push_back( p );
+  return 0;
+}
+
+c_movement::eb_path c_movement::simulate_eb_path( float ang ) {
+  pred_data_t d{};
+  float strafe = ang;
+  d.origin = g_cheat.m_prediction.old_origin;
+  d.velocity = g_cheat.m_prediction.old_velocity;
+  d.angle.y = m_ucmd->m_viewangles.y + strafe;
+  d.angle.clamp( );
+  if( strafe < 0.f )
+    d.move.y = 450.f;
+  if( strafe > 0.f )
+    d.move.y = -450.f;
+
+  find_edge( &d, strafe );
+  auto path = paths.at( paths.size( ) - 1 );
+
+  return path;
+}
+
+c_movement::eb_path c_movement::get_best_eb_angle() {
+  float percent = 1.f; // make a setting maybe?
+  eb_path best_path;
+  
+  best_path = simulate_eb_path( 0.f );
+  if( best_path.found ) {
+    return best_path;
+  }
+
+  float total_ang = 3.f * percent;
+  float last_ang = 0.f;
+
+  float drop_start_ang = 0.f;
+  float drop_end_ang = 0.f;
+
+  float last_z_pos = FLT_MAX;
+  float last_z_neg = FLT_MAX;
+  float max_z_delta = 4.f;
+  for( float strafe = 0.f; strafe <= total_ang; strafe += total_ang * 0.2f ) {
+    best_path = simulate_eb_path( strafe );
+    float pos_z = best_path.path.at( best_path.path.size( ) - 1 ).origin.z;
+
+    if( best_path.found )
+      return best_path;
+
+    best_path = simulate_eb_path( -strafe );
+    float neg_z = best_path.path.at( best_path.path.size( ) - 1 ).origin.z;
+
+    if( best_path.found )
+      return best_path;
+    
+    // z delta means there was a drop between the two
+    // meaning there is an edge between them
+    if( !drop_start_ang ) {
+      // 4.f is arbitrary
+      if( last_z_pos < FLT_MAX && abs( last_z_pos - pos_z ) > max_z_delta ) {
+        drop_start_ang = last_ang;
+        drop_end_ang = strafe;
+      }
+
+      if( last_z_neg < FLT_MAX && abs( last_z_neg - neg_z ) > max_z_delta ) {
+        drop_end_ang = -last_ang;
+        drop_start_ang = -strafe;
+      }
+    }
+
+    last_z_neg = neg_z;
+    last_z_pos = pos_z;
+    last_ang = strafe;
+  }
+
+  // check between the drop
+  last_ang = drop_start_ang;
+  float step = abs( drop_end_ang - drop_start_ang ) * 0.075f;
+  for( float strafe = last_ang; strafe < drop_end_ang; strafe += step ) {
+    best_path = simulate_eb_path( strafe );
+    if( best_path.found )
+      return best_path;
+  }
+
+  return best_path;
+}
+
+void c_movement::strafe_to_path( eb_path* path ) {
+  if( path->path.empty( ) )
+    return;
+
+  m_ucmd->m_forwardmove = path->path.at( 0 ).move.x;
+  m_ucmd->m_sidemove = path->path.at( 0 ).move.y;
+
+  m_ucmd->m_viewangles.y = path->path.at( 0 ).angle.y;
+  g_csgo.m_engine( )->SetViewAngles( m_ucmd->m_viewangles );
+  path->path.erase( path->path.begin( ) );
+}
+
+
 // https://wiki.sourceruns.org/wiki/Edgebug
 void c_movement::edge_bug( ) {
+  auto cleanup = [&]( ) { m_eb_path = {}; };
+
   if( !g_settings.misc.edge_bug )
-    return;
-
+      return cleanup( );
   if ( !g_input.is_key_pressed( ( VirtualKeys_t )g_settings.misc.edge_bug_key( ) ) )
-    return;
-
+    return cleanup( );
   if ( !g_ctx.m_local->is_alive( ) )
-    return;
-
-  if ( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND )
-    return;
-
+    return cleanup( );
+  if( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND )
+    return cleanup( );
   if ( g_ctx.m_local->m_nMoveType( ) == MOVETYPE_LADDER )
-    return;
-  
-  vec3_t view_ang = g_ctx.m_local->m_angEyeAngles( );
-  vec3_t start_vel = g_ctx.m_local->m_vecVelocity( );
-  vec3_t start_pos = g_ctx.m_local->m_vecOrigin( );
-  vec3_t pred_vel = start_vel,
-         pred_pos = start_pos,
-         best_vel{ },
-         best_pos{ };
-  edge_dist.clear( );
+    return cleanup( );
 
-  // swap off static values n come up with good dynamics
-  const int max_ticks = util::is_low_fps( ) ? 32 : 64;
-  const int num_paths = util::is_low_fps( ) ? 8 : 20;
+  paths.clear( );
 
-  float max_ang = 0.f;
-  const float max_speed = g_ctx.m_local->get_weapon( )->get_wpn_info( )->max_speed;
+  auto& wanted_path = m_eb_path.path;
 
-  find_max_strafe_angle(
-    pred_vel, pred_pos,
-    max_speed, max_ang
-  );
+  if( wanted_path.size() > 0 ) {
+    auto last_tick = wanted_path.at( wanted_path.size( ) - 1 );
+    if( last_tick.eb_tick ) {
+      vec3_t wanted_origin = m_eb_path.path.at( 0 ).origin;
+      vec3_t origin = g_cheat.m_prediction.old_origin;
 
-  const float ang_step = max_ang / num_paths;
-  for ( int idx = 0; idx < num_paths; ++idx ) {
-    vec3_t path_pred_pos = pred_pos;
-    vec3_t path_pred_vel = pred_vel;
-    vec3_t prev_pos = path_pred_pos;
-    bug_path.clear( );
-    
-    bool stop_calc = false;
-    for ( int tick = 0; tick < max_ticks; ++tick ) {
-      if ( stop_calc || !hit_path.empty( ) ) break;
-
-      float rads_off = ( idx - ( num_paths / 2 ) ) * ang_step * ( tick + 1 );
-      vec3_t wishdir = {
-        pred_vel.x * cos( rads_off ) - pred_vel.y * sin( rads_off ),
-        pred_vel.x * sin( rads_off ) - pred_vel.y * cos( rads_off ),
-        0.f
-      };
-      wishdir.normalize_vector( );
-
-      g_cheat.m_prediction.air_accelerate( g_ctx.m_local,
-        path_pred_pos, path_pred_vel, wishdir, max_speed
-      );
-
-      path_pred_pos = extrapolate_edge(
-        g_ctx.m_local, path_pred_pos, path_pred_vel, stop_calc
-      );
-
-      bug_path.push_back({ prev_pos, path_pred_pos });
-      prev_pos = path_pred_pos;
-
-      if ( !edge_bug_detect( g_ctx.m_local, path_pred_pos, path_pred_vel ) )
-        continue;
-
-      printf( "eb : %d\r", ++eb_count );
-
-      hit_path = bug_path;
-
-      // wrong, depend on trace
-      edge_dist.push_back(
-        ( g_ctx.m_local->m_vecOrigin( ) - path_pred_pos ).length2d( )
-      );
-
-      run_edge_bug = true;
-
-      break;
+      // 0.001 is kinda lenient but whatever 
+      // this optimally shouldnt happen anyway unless ur fps drops below tickrate
+      if( origin.dist_to_sqr( wanted_origin ) < 0.001f ) {
+        strafe_to_path( &m_eb_path );
+        return;
+      }
     }
 
-    if ( run_edge_bug || !hit_path.empty( ) )
-      break;
+    m_eb_path.path.clear( );
   }
-}
-
-void strafe_to_edge( user_cmd_t* cmd, const vec3_t& target_dir ) {
-  float yaw = g_csgo.m_engine( )->GetViewAngles( ).y;
-  vec3_t vel = g_ctx.m_local->m_vecVelocity( );
-  float speed = vel.length2d( );
-  vec3_t move_dir = target_dir;
-  move_dir.normalize_vector( );
-
-  float target_yaw = math::vector_angles( vec3_t( ), move_dir ).y;
-  float delta_yaw = remainderf( target_yaw - yaw, 360.f );
-
-  if ( fabs( delta_yaw ) < 1.f )
-    cmd->m_sidemove = 0;
-  else
-    cmd->m_sidemove = delta_yaw > 0 ? 450.f : -450.f;
-
-  rotate_movement( cmd, delta_yaw );
-}
-
-void c_movement::perform_edge_bug( ) {
-  if( !g_settings.misc.edge_bug )
-    return;
-
-  if ( !g_input.is_key_pressed( ( VirtualKeys_t )g_settings.misc.edge_bug_key( ) ) )
-    return;
-
-  if ( !g_ctx.m_local->is_alive( ) )
-    return;
-
-  if ( g_ctx.m_local->m_fFlags( ) & FL_ONGROUND )
-    return;
-
-  if ( g_ctx.m_local->m_nMoveType( ) == MOVETYPE_LADDER )
-    return;
-
-  if ( hit_path.empty( ) ) {
-    run_edge_bug = false;
-    return;
-  }
-
-  if ( !run_edge_bug )
-    return;
   
-  strafe_to_edge( m_ucmd, hit_path.front( ).second );
-  hit_path.erase( hit_path.begin( ) );
-
-  if ( !edge_dist.empty( ) && edge_dist.back( ) < 4.f && hit_path.size( ) < 2 ) // < 1 ?
-    m_ucmd->m_buttons |= IN_DUCK;
+  eb_path best_path = get_best_eb_angle();
+  if( best_path.found ) {
+    strafe_to_path( &best_path );
+    m_eb_path = best_path;
+  }
 }
-*/
 
 void c_movement::jump_bug( ) {
   static const float jb_dist = .1f;

@@ -300,7 +300,11 @@ public:
 	inline void normalize_vector( ) {
 		vec3_t& v = *this;
 
-		float iradius = 1.f / ( this->length( ) + FLT_EPSILON ); //FLT_EPSILON
+		float l = length( );
+		if( !l )
+			return;
+
+		float iradius = 1.f / l; //FLT_EPSILON
 
 		v.x *= iradius;
 		v.y *= iradius;

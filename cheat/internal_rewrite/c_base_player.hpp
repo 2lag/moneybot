@@ -307,6 +307,7 @@ public:
 	NETVAR( m_hGroundEntity, "m_hGroundEntity", "DT_CSPlayer", 0, uint32_t );
 	NETVAR( m_flConstraintRadius, "m_flConstraintRadius", "DT_CSPlayer", 0, float );
 	NETVAR( m_flHealthShotBoostExpirationTime, "m_flHealthShotBoostExpirationTime", "DT_CSPlayer", 0, float );
+	NETVAR( m_flStamina, "m_flStamina", "DT_CSPlayer", 0, float );
 
 	OFFSET( m_CachedBoneData, 0x2914, CUtlVector< matrix3x4 > );
 	OFFSET( m_flSpawnTime, 0xA2C0, float );

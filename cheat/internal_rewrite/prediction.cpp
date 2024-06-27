@@ -474,24 +474,53 @@ vec3_t c_prediction::extrapolate_player( c_base_player* player, int ticks ) {
 	return predicted;
 }
 
+void c_prediction::clip_velocity( vec3_t& in, vec3_t& normal, vec3_t& out, float overbounce ) {
+  float	backoff;
+  float	change;
+  float angle;
+  int		i, blocked;
+	
+  angle = normal[ 2 ];
+
+  blocked = 0x00;         
+  if( angle > 0 )			
+    blocked |= 0x01;	
+  if( !angle )				
+    blocked |= 0x02;	
+	
+
+  backoff = in.dot(normal) * overbounce;
+
+  for( i=0 ; i<3 ; i++ ) {
+    change = normal[i]*backoff;
+    out[i] = in[i] - change; 
+  }
+	
+  float adjust = out.dot( normal );
+  if( adjust < 0.0f ) {
+    adjust = math::min( adjust, 0.03125f );
+    out -= ( normal * adjust );
+  }
+}
+
 void c_prediction::trace_player_bbox( c_base_player* player, const vec3_t& start, const vec3_t& end, CGameTrace* pm ) {
 	Ray_t ray;
 	ray.Init( start, end, player->m_vecMins( ), player->m_vecMaxs( ) );
+	// interacting with phys entities is handled by
+	// havok in src
+	// and u cant eb off of players so fk it
+	CTraceFilterWorldAndPropsOnly filter;
 
-	CTraceFilter filter;
-	filter.pSkip = player;
-
-	g_csgo.m_trace( )->TraceRay( ray, MASK_SOLID & ~CONTENTS_MONSTER, &filter, pm );
+	g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &filter, pm );
 }
 
 void c_prediction::try_touch_ground( c_base_player* player, const vec3_t& start, const vec3_t& end, const vec3_t& mins, const vec3_t& maxs, CGameTrace* pm ) {
 	Ray_t ray;
 	ray.Init( start, end, mins, maxs );
 
-	CTraceFilter filter;
-	filter.pSkip = player;
+	CTraceFilterWorldAndPropsOnly filter;
 
-	g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID & ~CONTENTS_MONSTER, &filter, pm );
+	g_csgo.m_trace( )->TraceRay( ray, MASK_PLAYERSOLID, &filter, pm );
 }
 
 void c_prediction::try_touch_ground_in_quadrants( c_base_player* player, const vec3_t& start, const vec3_t& end, CGameTrace* pm ) {
@@ -569,9 +598,11 @@ void c_prediction::run_command( user_cmd_t *ucmd ) {
 	float old_frame_time = g_csgo.m_globals->m_frametime;
 	int old_tickbase = g_ctx.m_local->m_nTickBase( );
 	int old_flags = g_ctx.m_local->m_fFlags( );
+	float old_stamina = g_ctx.m_local->m_flStamina( );
 	MoveType_t old_move_type = g_ctx.m_local->m_nMoveType( );
-	vec3_t old_velocity = g_ctx.m_local->m_vecVelocity( );
-
+	old_velocity = g_ctx.m_local->m_vecVelocity( );
+  old_origin = g_ctx.m_local->m_vecOrigin( );
+  
 	//set globals
 	g_csgo.m_globals->m_curtime = g_csgo.m_globals->m_interval_per_tick * old_tickbase;
 	g_csgo.m_globals->m_frametime = g_csgo.m_globals->m_interval_per_tick;
@@ -581,7 +612,8 @@ void c_prediction::run_command( user_cmd_t *ucmd ) {
 	//**( uintptr_t** )( run_command_address + 0x54 ) = uintptr_t( g_ctx.m_local ); //prediction player
 
 																				  //start prediction
-	g_csgo.m_move_helper( )->SetHost( local_ent );
+	// this is fucked. probably not needed in 2023 csgo.
+	/*g_csgo.m_move_helper( )->SetHost( local_ent );
 	g_csgo.m_game_movement( )->StartTrackPredictionErrors( local_ent );
 
 	//run prediction
@@ -591,7 +623,7 @@ void c_prediction::run_command( user_cmd_t *ucmd ) {
 
 	//finish prediction
 	g_csgo.m_game_movement( )->FinishTrackPredictionErrors( local_ent );
-	g_csgo.m_move_helper( )->SetHost( nullptr );
+	g_csgo.m_move_helper( )->SetHost( nullptr );*/
 
 	//**( uintptr_t** )( run_command_address + 0x3E ) = 0xffffffff;
 	//**( uintptr_t*** )( run_command_address + 0x54 ) = nullptr;
@@ -607,6 +639,7 @@ void c_prediction::run_command( user_cmd_t *ucmd ) {
 	g_ctx.m_local->m_fFlags( ) = old_flags;
 	g_ctx.m_local->m_nMoveType( ) = old_move_type;
 	g_ctx.m_local->m_vecVelocity( ) = old_velocity;
+	g_ctx.m_local->m_flStamina( ) = old_stamina;
 
 	ucmd->m_forwardmove = backup_forwardmove;
 	ucmd->m_sidemove = backup_sidemove;

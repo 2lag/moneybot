@@ -18,7 +18,10 @@ class c_prediction
 	float m_old_time;
 	float m_old_frametime;
 	int   m_old_tickcount;
-
+public:
+  vec3_t old_origin;
+  vec3_t old_velocity;
+private:
 	int   m_prediction_seed;
 	int   m_prediction_player;
 
@@ -80,7 +83,9 @@ public:
 	bool categorize_position( c_base_player*, vec3_t&, vec3_t& );
 	void check_velocity( c_base_player*, vec3_t&, vec3_t& );
 	void try_player_move( c_base_player*, vec3_t&, vec3_t& );
+  void clip_velocity( vec3_t& in, vec3_t& normal, vec3_t& out, float overbounce );
 
+  
 	void frame_stage_notify( );
 	vec3_t aimware_extrapolate( c_base_player* ent, vec3_t origin, vec3_t& velocity );
 	void predict_player( c_base_player* player );
@@ -89,9 +94,7 @@ public:
 	void trace_player_bbox( c_base_player*, const vec3_t& start, const vec3_t& end, CGameTrace* pm );
 	void try_touch_ground( c_base_player*, const vec3_t& start, const vec3_t& end, const vec3_t& mins, const vec3_t& maxs, CGameTrace* pm );
 	void try_touch_ground_in_quadrants( c_base_player*, const vec3_t& start, const vec3_t& end, CGameTrace* pm );
-
-private: // for deadstrafe
-  float get_surface_friction( float zvel, int mt );
+	float get_surface_friction( float zvel, int mt );
 };
 
 END_REGION
