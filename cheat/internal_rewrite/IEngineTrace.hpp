@@ -155,6 +155,7 @@ public:
 	void* passentity2;
 };
 
+
 class __declspec( align( 16 ) )VectorAligned : public vec3_t {
 public:
 	VectorAligned( float _x, float _y, float _z ) {
