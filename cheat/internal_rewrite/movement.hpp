@@ -65,15 +65,14 @@ protected:
     void air_duck( );
 
 public:
-  std::vector< eb_path> paths;
+  std::vector<eb_path> paths;
   vec3_t edge_pos;
   int eb_found;
   
 	void operator()( user_cmd_t* ucmd ) {
 		m_ucmd = ucmd;
     edge_bug( );
-    //perform_edge_bug( );
-    pixel_surf( );
+    //pixel_surf( );
 		auto_strafer( );
 		circle_strafe( );
 		fast_walk( );

@@ -252,8 +252,6 @@ namespace features
     /*if( !g_settings.misc.edge_bug )
       return;
 
-
-
     for( auto p : g_cheat.m_movement.paths ) {
 			//if( !p.found )
 			//	continue;

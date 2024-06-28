@@ -271,7 +271,7 @@ void eb_airmove( c_movement::pred_data_t* d ) {
 
 
 int c_movement::find_edge( pred_data_t* d, float strafe ) {
-  const int EDGE_TICKS_MAX = 64; // also make a setting?
+  const int EDGE_TICKS_MAX = 64; // also make a setting or base off fps
 
   eb_path p{};
   
@@ -322,7 +322,7 @@ c_movement::eb_path c_movement::simulate_eb_path( float ang ) {
 }
 
 c_movement::eb_path c_movement::get_best_eb_angle() {
-  float percent = 1.f; // make a setting maybe?
+  float percent = 1.f; // make a setting from 0.5 - 2
   eb_path best_path;
   
   best_path = simulate_eb_path( 0.f );
@@ -354,17 +354,17 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
     
     // z delta means there was a drop between the two
     // meaning there is an edge between them
-    if( !drop_start_ang ) {
-      // 4.f is arbitrary
-      if( last_z_pos < FLT_MAX && abs( last_z_pos - pos_z ) > max_z_delta ) {
-        drop_start_ang = last_ang;
-        drop_end_ang = strafe;
-      }
-
-      if( last_z_neg < FLT_MAX && abs( last_z_neg - neg_z ) > max_z_delta ) {
-        drop_end_ang = -last_ang;
-        drop_start_ang = -strafe;
-      }
+    // 4.f is arbitrary
+    if( last_z_pos < FLT_MAX && abs( last_z_pos - pos_z ) > max_z_delta ) {
+      max_z_delta = abs( last_z_pos - pos_z );
+      drop_start_ang = last_ang;
+      drop_end_ang = strafe;
+    }
+    
+    if( last_z_neg < FLT_MAX && abs( last_z_neg - neg_z ) > max_z_delta ) {
+      max_z_delta = abs( last_z_neg - neg_z );
+      drop_end_ang = -last_ang;
+      drop_start_ang = -strafe;
     }
 
     last_z_neg = neg_z;
@@ -374,7 +374,7 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
 
   // check between the drop
   last_ang = drop_start_ang;
-  float step = abs( drop_end_ang - drop_start_ang ) * 0.075f;
+  float step = abs( drop_end_ang - drop_start_ang ) * 0.075f; // 1 / 0.075 subdivisions
   for( float strafe = last_ang; strafe < drop_end_ang; strafe += step ) {
     best_path = simulate_eb_path( strafe );
     if( best_path.found )
