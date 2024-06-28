@@ -1,7 +1,11 @@
 #pragma once
 #include <inttypes.h>
 #include <string>
+#include <windows.h>
 #include "strings.hpp"
+#pragma comment( lib, "Winmm.lib")
+
+#undef CreateFont
 
 //#define COMIC_SANS
 
@@ -38,6 +42,16 @@ struct reverse_iterable {
 		return std::rend( iterable );
 	}
 };
+
+
+inline float perf_counter( ) {
+	ULARGE_INTEGER ull;
+	FILETIME ft;
+	GetSystemTimePreciseAsFileTime( &ft );
+	ull.LowPart = ft.dwLowDateTime;
+	ull.HighPart = ft.dwHighDateTime;
+	return (float)( ft.dwLowDateTime & 0x00ffffff ) / 10000.0;
+}
 
 struct hitchance_data_t {
 	float m_random[ 2 ];

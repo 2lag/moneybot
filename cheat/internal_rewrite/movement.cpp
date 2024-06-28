@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include "base_cheat.hpp"
+#include "d3d.hpp"
 #include "input_system.hpp"
 #include "renderer.hpp"
 
@@ -155,15 +156,28 @@ void clamp_move( vec2_t* move ) {
   }
 }
 
+void store_eb_pos( c_movement::pred_data_t* d, vec3_t last, vec3_t cur ) {
+  float original_z = cur.z;
+  last.z = cur.z;
+
+  vec3_t dir = cur - last;
+  dir.normalize_vector( );
+
+  bool pls_;
+  CGameTrace t;
+  g_cheat.m_prediction.trace_player_bbox( g_ctx.m_local, cur, cur - dir * (cur-dir).length(), &t );
+
+  vec3_t endpos = t.endpos;
+  endpos += t.plane.normal * -16.f;
+
+  d->eb_hit = endpos;
+  d->eb_hit.z = cur.z;
+  d->eb_norm = t.plane.normal;
+}
+
 // https://github.com/ValveSoftware/source-sdk-2013/blob/master/mp/src/game/shared/gamemovement.cpp#L3774
 void categorize_position( c_movement::pred_data_t* d ) {
   float zvel = d->velocity.z;
-
-  // surfing up ground
-  if( zvel > 140.f ) {
-    d->onground = false;
-    return;
-  }
 
   vec3_t start = d->origin;
   vec3_t end = start;
@@ -174,6 +188,15 @@ void categorize_position( c_movement::pred_data_t* d ) {
 
   if( !t.m_pEnt )
     return;
+
+  // surfing up ground
+  if( zvel > 140.f ) {
+    d->onground = false;
+    // technically the behavior of surfing up a standable slope
+    // is identical to edgebugging, but we dont want that.
+    d->hit_wall = true;
+    return;
+  }
 
   if( t.plane.normal < 0.7f ) {
     g_cheat.m_prediction.try_touch_ground_in_quadrants( g_ctx.m_local, start, end, &t );
@@ -194,6 +217,8 @@ void try_player_move( c_movement::pred_data_t* d ) {
   float timeleft = TICK_INTERVAL( );
   int numbumps = 4;
 
+  vec3_t start = d->origin;
+
   for( int b = 0; b < numbumps; ++b ) {
     travel = d->velocity * timeleft;
     end = d->origin + travel;
@@ -204,10 +229,7 @@ void try_player_move( c_movement::pred_data_t* d ) {
       return;
     }
 
-    if( t.fraction < 0.0001f )
-      return;
-
-    if( t.allsolid )
+    if( t.allsolid || t.fraction < 0.0001f )
       return;
 
     d->origin = t.endpos;
@@ -278,9 +300,12 @@ int c_movement::find_edge( pred_data_t* d, float strafe ) {
   p.path.push_back( *d );
   for( int i = 0; i < EDGE_TICKS_MAX; ++i ) {
     bool eb = d->eb_tick;
+    vec3_t origin = d->origin;
     eb_airmove( d );
 
     if( eb ) {
+      store_eb_pos( d, origin, d->origin );
+
       p.path.push_back( *d );
       paths.push_back( p );
       return 1;
@@ -321,6 +346,46 @@ c_movement::eb_path c_movement::simulate_eb_path( float ang ) {
   return path;
 }
 
+bool c_movement::eb_iterate_angles( eb_path* out_path, float* start, float* end, float* start_z, float* end_z ) {
+  eb_path p;
+
+  float last_ang = *start;
+  float last_z = *start_z;
+  float max_z_delta = 4.f;
+  float old_z_delta = abs( *start_z - *end_z );
+  float step = ( *end - *start ) * 0.2f;
+  bool found = false;
+  
+  for( int i = 1; i <= 3; ++i ) {
+    float ang = last_ang + step;
+
+    p = simulate_eb_path( ang );
+    if( p.found ) {
+      *out_path = p;
+      return true;
+    }
+    
+    float z = p.path.at( p.path.size() - 1 ).origin.z;
+    float start_diff = z - *start_z;
+    if( abs( start_diff ) < 4.f ) {
+      *start = ang;
+      *start_z = z;
+    }
+    
+    float end_diff = z - *end_z;
+    if( abs( end_diff ) < 4.f ) {
+      *end = ang;
+      *end_z = ang;
+    }
+
+    last_z = z;
+    last_ang = ang;
+  }
+
+  return false;
+}
+
+
 c_movement::eb_path c_movement::get_best_eb_angle() {
   float percent = 1.f; // make a setting from 0.5 - 2
   eb_path best_path;
@@ -338,31 +403,39 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
 
   float last_z_pos = FLT_MAX;
   float last_z_neg = FLT_MAX;
+  float best_z_start = 0.f;
+  float best_z_end = 0.f;
   float max_z_delta = 4.f;
-  for( float strafe = 0.f; strafe <= total_ang; strafe += total_ang * 0.2f ) {
+  for( float strafe = 0.f; strafe <= total_ang; strafe += total_ang * 0.3f ) {
     best_path = simulate_eb_path( strafe );
     float pos_z = best_path.path.at( best_path.path.size( ) - 1 ).origin.z;
+    bool pos_wall = best_path.path.at( best_path.path.size( ) - 1 ).hit_wall;
 
     if( best_path.found )
       return best_path;
 
     best_path = simulate_eb_path( -strafe );
     float neg_z = best_path.path.at( best_path.path.size( ) - 1 ).origin.z;
+    bool neg_wall = best_path.path.at( best_path.path.size( ) - 1 ).hit_wall;
 
     if( best_path.found )
       return best_path;
-    
+
     // z delta means there was a drop between the two
     // meaning there is an edge between them
     // 4.f is arbitrary
-    if( last_z_pos < FLT_MAX && abs( last_z_pos - pos_z ) > max_z_delta ) {
+    if( !pos_wall && last_z_pos < FLT_MAX && last_z_pos - pos_z > max_z_delta ) {
       max_z_delta = abs( last_z_pos - pos_z );
+      best_z_start = last_z_pos;
+      best_z_end = pos_z;
       drop_start_ang = last_ang;
       drop_end_ang = strafe;
     }
     
-    if( last_z_neg < FLT_MAX && abs( last_z_neg - neg_z ) > max_z_delta ) {
+    if( !neg_wall && last_z_neg < FLT_MAX && last_z_neg - neg_z > max_z_delta ) {
       max_z_delta = abs( last_z_neg - neg_z );
+      best_z_start = neg_z;
+      best_z_end = last_z_neg;
       drop_end_ang = -last_ang;
       drop_start_ang = -strafe;
     }
@@ -372,13 +445,27 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
     last_ang = strafe;
   }
 
-  // check between the drop
-  last_ang = drop_start_ang;
-  float step = abs( drop_end_ang - drop_start_ang ) * 0.075f; // 1 / 0.075 subdivisions
-  for( float strafe = last_ang; strafe < drop_end_ang; strafe += step ) {
-    best_path = simulate_eb_path( strafe );
-    if( best_path.found )
-      return best_path;
+  if( max_z_delta > 4.f ) {
+    float start = util::perf_counter( );
+    float msec = 0.f;
+    float delta = 0.f;
+    bool found = false;
+    float timeout = TICK_INTERVAL( ) * 1000.f * 0.45f;
+
+    int iter = 0;
+    do {
+      found = eb_iterate_angles(
+        &best_path,
+        &drop_start_ang,
+        &drop_end_ang,
+        &best_z_start,
+        &best_z_end
+      );
+
+      float msec = util::perf_counter( );
+      ++iter;
+      delta = msec - start;
+    } while( !found && delta < timeout && iter < 64 );
   }
 
   return best_path;
@@ -393,6 +480,9 @@ void c_movement::strafe_to_path( eb_path* path ) {
 
   m_ucmd->m_viewangles.y = path->path.at( 0 ).angle.y;
   g_csgo.m_engine( )->SetViewAngles( m_ucmd->m_viewangles );
+  if( path->path.size( ) == 1 )
+    m_eb_hit = true;
+  
   path->path.erase( path->path.begin( ) );
 }
 

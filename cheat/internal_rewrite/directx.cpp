@@ -194,6 +194,9 @@ long __stdcall hooks::d3d::end_scene( IDirect3DDevice9* device ) {
 long __stdcall hooks::d3d::present( IDirect3DDevice9* device, RECT* source, RECT* dest, HWND wnd_override, RGNDATA* reg ) {
 	static auto present_o = g_csgo.m_d3d->get_old_function< decltype( &hooks::d3d::present ) >( 17 );
 
+	timeBeginPeriod( 1 );
+	g_d3d.on_present( );
+
 	static uintptr_t return_address = 0;
 	if( !return_address ) {
 		return_address = ( uintptr_t )( _ReturnAddress( ) );

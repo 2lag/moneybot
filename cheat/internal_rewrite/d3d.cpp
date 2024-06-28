@@ -84,6 +84,17 @@ namespace d3d
 		return true;
 	}
 
+  void c_renderer::on_present() {
+		float msec = util::perf_counter( );
+
+    if( last_frame_time )
+      last_frametime = msec - last_frame_time;
+		if( last_frametime > 10.f )
+			last_frametime = 10.f;
+
+	  last_frame_time = msec;
+	}
+
 	c_renderer::~c_renderer( ) {
 		if( !m_device )
 			return;

@@ -72,14 +72,20 @@ namespace d3d
 		IDirect3DTexture9*		m_sil_txt;
 		IDirect3DVertexBuffer9* m_buffer;
 		IDirect3DSurface9*		m_surface;
+
+	  float last_frame_time;
 	public:
 		ulong_t					m_width;
 		ulong_t					m_height;
 
+    float last_frametime;
+	  
 		c_renderer( ) { };
 		c_renderer( IDirect3DDevice9* device );
 		~c_renderer( );
 
+    void on_present();
+	  
 		void on_device_lost( );
 		void on_device_reset( );
 		auto get_device( ) {

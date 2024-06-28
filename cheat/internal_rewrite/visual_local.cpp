@@ -249,8 +249,57 @@ namespace features
   void c_visuals::draw_edge_bug( ) {
 		// leaving this in just so u can see the amt of shit i log.
 
-    /*if( !g_settings.misc.edge_bug )
+    if( !g_settings.misc.edge_bug )
       return;
+		
+		auto& p = g_cheat.m_movement.m_eb_path;
+		if( p.path.size( ) < 2 )
+			return;
+
+		auto first = p.path.at( 0 );
+		auto last = p.path.at( p.path.size( ) - 1 );
+
+		vec3_t eb_pos = last.eb_hit;
+		vec3_t eb_norm = last.eb_norm;
+
+		vec3_t off = eb_norm * -16.f;
+
+		vec3_t lastorigin = first.origin + off;
+		for( int i = 1; i < p.path.size( ); ++i ) {
+			auto& it = p.path.at( i );
+
+			vec3_t cur = it.origin + off;
+			vec2_t prev_w2s = util::screen_transform( lastorigin );
+			vec2_t cur_w2s = util::screen_transform( cur );
+
+			draw_line( prev_w2s, cur_w2s, clr_t( 255, 255, 255, (float)i / p.path.size() * 255 ) );
+			if( it.eb_tick )
+				break;
+
+			lastorigin = cur;
+		}
+
+		vec3_t norm_ang = math::vector_angles( eb_norm );
+
+		vec3_t rot_l = math::get_rotated_pos( vec3_t( ), norm_ang.y + 90.f, 1.0f );
+		vec3_t rot_r = math::get_rotated_pos( vec3_t( ), norm_ang.y + 270.f, 1.0f );
+		
+		vec2_t w2s = util::screen_transform( eb_pos );
+		vec2_t last_l = w2s;
+		vec2_t last_r = w2s;
+
+		for( int i = 1; i < 32; ++i ) {
+			vec2_t w2s_l = util::screen_transform( eb_pos + rot_l * ( float )i );
+			vec2_t w2s_r = util::screen_transform( eb_pos + rot_r * (float)i );
+
+			draw_line( last_l, w2s_l, clr_t( 255, 255, 255, ( 1.f - ( float )i / 32 ) * 255 ) );
+			draw_line( last_r, w2s_r, clr_t( 255, 255, 255, ( 1.f - ( float )i / 32 ) * 255 ) );
+
+			last_l = w2s_l;
+			last_r = w2s_r;
+		}
+
+		return;
 
     for( auto p : g_cheat.m_movement.paths ) {
 			//if( !p.found )
@@ -303,26 +352,12 @@ namespace features
 				return;
 
 			auto& first = p.path.at( 0 );
-			vec3_t lastorigin = first.origin;
 			vec3_t lastang = first.angle;
 			vec2_t lastmove = first.move;
 
-			for( int i = 1; i < p.path.size(); ++i ) {
-				auto& it = p.path.at( i );
-	    
-				vec3_t cur = it.origin;
-				vec2_t prev_w2s = util::screen_transform( lastorigin );
-				vec2_t cur_w2s = util::screen_transform( cur );
 
-				draw_line( prev_w2s, cur_w2s, line_col );
-				draw_filled_rect( prev_w2s.x - 5, prev_w2s.y - 5, 10, 10, box_col );
-	    
-				lastorigin = cur;
-				lastang = it.angle;
-				lastmove = it.move;
-			}
     }
-
+		/*
 		auto p = g_cheat.m_movement.m_full_eb_path;
 		if( p.path.size( ) > 0 ) {
 			clr_t line_col = clr_t( 0, 0, 128 ),

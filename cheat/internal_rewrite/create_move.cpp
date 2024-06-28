@@ -40,7 +40,6 @@ void __fastcall hooks::hl_create_move( void* ecx, void* edx, int a1, float a2, b
   if( !ucmd->m_cmd_nr )
     return;
   
-  
   // when switching to non automatic weapons, it will sometimes not shoot when aimbotting so we reset attack flag
   bool is_switching_weapon = false;
   if( g_csgo.m_input( )->m_hSelectedWeapon != -1 ) {

@@ -22,7 +22,8 @@ public:
     bool onground;
     bool eb_tick;
     float eb_frac;
-    float eb_dot;
+    vec3_t eb_norm;
+    vec3_t eb_hit;
 
     bool hit_wall;
     int  ticks;
@@ -33,13 +34,12 @@ public:
     vec3_t edge;
     int found;
   };
-
+  eb_path m_eb_path;
+  bool    m_eb_hit;
 
 protected:
   user_cmd_t* m_ucmd{ };
 	bool		m_direction{ };
-
-  eb_path m_eb_path;
 
 	void bhop( );
 	void auto_strafer( );
@@ -49,6 +49,7 @@ protected:
   void edge_bug( );
   eb_path get_best_eb_angle();
   eb_path simulate_eb_path( float angle );
+  bool eb_iterate_angles( eb_path* out_path, float* start, float* end, float* start_z, float* end_z );
   void strafe_to_path( eb_path* path );
   int find_edge( pred_data_t* d, float strafe );
 
