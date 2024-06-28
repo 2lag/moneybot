@@ -354,7 +354,6 @@ bool c_movement::eb_iterate_angles( eb_path* out_path, float* start, float* end,
   float max_z_delta = 4.f;
   float old_z_delta = abs( *start_z - *end_z );
   float step = ( *end - *start ) * 0.2f;
-  bool found = false;
   
   for( int i = 1; i <= 3; ++i ) {
     float ang = last_ang + step;
@@ -367,15 +366,16 @@ bool c_movement::eb_iterate_angles( eb_path* out_path, float* start, float* end,
     
     float z = p.path.at( p.path.size() - 1 ).origin.z;
     float start_diff = z - *start_z;
-    if( abs( start_diff ) < 4.f ) {
-      *start = ang;
-      *start_z = z;
-    }
-    
     float end_diff = z - *end_z;
-    if( abs( end_diff ) < 4.f ) {
-      *end = ang;
-      *end_z = ang;
+
+    if( abs( start_diff - end_diff ) > 2.f ) {
+      if( start_diff < end_diff ) {
+        *start = ang;
+        *start_z = z;
+      } else {
+        *end = ang;
+        *end_z = ang;
+      }
     }
 
     last_z = z;
@@ -434,8 +434,8 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
     
     if( !neg_wall && last_z_neg < FLT_MAX && last_z_neg - neg_z > max_z_delta ) {
       max_z_delta = abs( last_z_neg - neg_z );
-      best_z_start = neg_z;
       best_z_end = last_z_neg;
+      best_z_start = neg_z;
       drop_end_ang = -last_ang;
       drop_start_ang = -strafe;
     }
@@ -450,7 +450,8 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
     float msec = 0.f;
     float delta = 0.f;
     bool found = false;
-    float timeout = TICK_INTERVAL( ) * 1000.f * 0.45f;
+    float timeout = TICK_INTERVAL( ) * 1000.f * 0.35f;
+    float ang_delta = 0.f;
 
     int iter = 0;
     do {
@@ -462,10 +463,11 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
         &best_z_end
       );
 
+      ang_delta = drop_end_ang - drop_start_ang;
       float msec = util::perf_counter( );
-      ++iter;
       delta = msec - start;
-    } while( !found && delta < timeout && iter < 64 );
+      ++iter;
+    } while( !found && delta < timeout && iter < 32 && ang_delta > 0.00001f );
   }
 
   return best_path;
