@@ -375,6 +375,7 @@ bool c_movement::eb_iterate_angles( eb_path* out_path, float* start, float* end,
       } else {
         *end = ang;
         *end_z = ang;
+        break;
       }
     }
 
@@ -445,7 +446,7 @@ c_movement::eb_path c_movement::get_best_eb_angle() {
     last_ang = strafe;
   }
 
-  if( max_z_delta > 4.f ) {
+  if( max_z_delta > 2.f ) {
     float start = util::perf_counter( );
     float msec = 0.f;
     float delta = 0.f;
